@@ -1,0 +1,21 @@
+﻿<Project>
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <HighEntropyVA>true</HighEntropyVA>
+    <ApplicationIcon />
+    <StartupObject /> 
+  </PropertyGroup>
+
+  <Import Project="..\OverSight.props" />
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\BoogieSyntaxTree\BoogieSyntaxTree.csproj" />
+    <ProjectReference Include="..\SoliditySyntaxTree\SoliditySyntaxTree.csproj" />
+  </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+</Project>
