@@ -10,7 +10,7 @@ Unless stated otherwise, branch "master" will contain the release code.
 
 # Installation
 
-Installatino instructions can be found through accessing the following link.
+Installation instructions can be found through accessing the following link.
 
 
 # Examples
@@ -19,8 +19,8 @@ If any doubt arises regarding running the program, the following section should 
 
 # Licensing
 
-Oversight will be compliant as per the requirements of the MIT license
+Oversight will be compliant as per the requirements of the MIT license.
 
 # Developers
 
-Shane Gill (Founder/Active Developer)
+Shane Gill (Active Developer)
