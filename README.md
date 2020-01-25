@@ -1,4 +1,4 @@
-# Oversight
+# Oversight (Development)
 Verification and Validation tool for Smart Contracts
 
 Oversight is a formal verification tool for Smart Contracts written in Solidity that should be able to produce both proofs and counter examples. 
