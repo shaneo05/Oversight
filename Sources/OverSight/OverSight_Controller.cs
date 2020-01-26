@@ -12,9 +12,7 @@ namespace OverSightHandler
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
-    using System.Runtime.InteropServices;
-    using System.Reflection;
-    using System.Linq;
+   
 
     internal class OverSightExecutor
     {
@@ -60,21 +58,19 @@ namespace OverSightHandler
         public int Execute()
         {
             // call SolToBoogie on specFilePath
+            //This should be called on execution failure
             if (!ExecuteSolToBoogie())
             {
                 return 1;
             }
 
-            /*
-            
-
-            // try to prove first
-            if (TryProof && FindProof())
+            if (TryProof)   //if proofing is true attempt to find a proof via FindProof();
             {
-                return 0;
+                if (FindProof())
+                {
+                    return 0;
+                }
             }
-            
-            */
 
             return 0;
         }
@@ -97,7 +93,7 @@ namespace OverSightHandler
             };
 
             
-            /*
+            
             var boogieArgString = string.Join(" ", boogieArgs);
 
             Console.WriteLine($"\nSolidity to Boogie Conversion has successfully completed.");
@@ -128,7 +124,7 @@ namespace OverSightHandler
                 Console.WriteLine($"\t*** OverSight was unable to find a proof (see {boogieOutFile})");
                 return false;
             }
-            */
+            
       
             return false;
         }
