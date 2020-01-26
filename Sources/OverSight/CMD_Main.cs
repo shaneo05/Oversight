@@ -5,7 +5,6 @@ namespace OverSightHandler
     using System.Collections.Generic;
     using System.IO;
 
-    using Microsoft.Extensions.Logging;
     using SolToBoogie;
 
     /// <summary>
@@ -22,34 +21,24 @@ namespace OverSightHandler
                 return 1;
             }
 
-            string solidityFile, entryPointContractName;
-            bool tryProofFlag;
-            int recursionBound;
-            ILogger logger;
+            string solFile, entryPointContractName;
+            bool attemptProof = false;
             HashSet<Tuple<string, string>> ignoredMethods;
-            bool printTransactionSequence = false;
             TranslatorFlags translatorFlags = new TranslatorFlags();
 
-            SolToBoogie.ParseUtils.ParseCommandLineArgs(args,
-                out solidityFile,
-                out entryPointContractName,
-                out tryProofFlag,
-                out recursionBound,
-                out logger,
-                out ignoredMethods,
-                out printTransactionSequence, 
-                ref translatorFlags);
+            SolToBoogie.ParseUtils.ParseCommandLineArgs(args, out solFile,
+                                                        out entryPointContractName,
+                                                        out attemptProof,
+                                                        out ignoredMethods,
+                                                        ref translatorFlags);
 
-            var overSightExecutor =
-                new OverSightExecutor(
-                    Path.Combine(Directory.GetCurrentDirectory(), solidityFile), 
-                    entryPointContractName,
-                    ignoredMethods,
-                    tryProofFlag,
-                    logger,
-                    printTransactionSequence,
-                    translatorFlags);
-            return overSightExecutor.Execute();
+            var overSightExecutor = new OverSightExecutor(
+                                        Path.Combine(Directory.GetCurrentDirectory(), solFile), 
+                                        entryPointContractName,
+                                        ignoredMethods,
+                                        attemptProof,
+                                        translatorFlags);
+                        return overSightExecutor.Execute();
         }
 
 

@@ -40,7 +40,7 @@ namespace OverSightHandler
         private HashSet<Tuple<string, string>> ignoreMethods;
         private TranslatorFlags translatorFlags;
 
-        public OverSightExecutor(string solidityFilePath, string contractName, HashSet<Tuple<string, string>> ignoreMethods,bool tryProofFlag, ILogger logger, bool _printTransactionSequence, TranslatorFlags _translatorFlags = null)
+        public OverSightExecutor(string solidityFilePath, string contractName, HashSet<Tuple<string, string>> ignoreMethods,bool tryProofFlag, TranslatorFlags _translatorFlags = null)
         {
             this.SolidityFilePath = solidityFilePath;
             this.ContractName = contractName;
