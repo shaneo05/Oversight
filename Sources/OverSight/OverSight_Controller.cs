@@ -3,7 +3,6 @@
 namespace OverSightHandler
 {
 
-    using Microsoft.Extensions.Logging;
     using SolidityAST;
     using BoogieAST;
     using SolToBoogie;
@@ -63,7 +62,7 @@ namespace OverSightHandler
         {
             // call SolToBoogie on specFilePath
             //This should be called on execution failure
-            if (!ExecuteSolToBoogie())
+            if (!RunSolidityToBoogieConversion())
             {
                 return 1;
             }
@@ -131,8 +130,10 @@ namespace OverSightHandler
                  
         }
 
-     
-        private bool ExecuteSolToBoogie()
+        /**
+         * Runs solidity conversion function
+         */
+        private bool RunSolidityToBoogieConversion()
         {
             Console.WriteLine("Starting Solidity Compiler.");
 

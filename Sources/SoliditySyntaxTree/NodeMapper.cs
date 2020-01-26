@@ -3,7 +3,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
 
-    public class NodeMapper : BasicASTVisitor
+    public class NodeMapper : Generic_Syntax_Tree_Visitor
     {
         private readonly ASTNode root;
 

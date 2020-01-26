@@ -5,16 +5,12 @@ namespace SolToBoogie
     using SolidityAST;
 
     /**
+     * SubInheritance of AST Visittor 
      * Collect all constructor definitions and put them in the translator context.
      */
-    public class accumulator_SOL_Constructor : BasicASTVisitor
+    public class accumulator_SOL_Constructor : Generic_Syntax_Tree_Visitor
     {
-        private TranslatorContext context;
-
-        public accumulator_SOL_Constructor(TranslatorContext context)
-        {
-            this.context = context;
-        }
+        private TranslatorContext classContext;
 
         public override bool Visit(ContractDefinition node)
         {
@@ -24,15 +20,19 @@ namespace SolToBoogie
                 {
                     if (function.IsConstructor)
                     {
-                        context.AddConstructorToContract(node, function);
+                        classContext.AddConstructorToContract(node, function);
                     }
                     else if (function.IsFallback)
                     {
-                        context.AddFallbackToContract(node, function);
+                        classContext.AddFallbackToContract(node, function);
                     }
                 }
             }
             return false;
+        }
+        public void setContext(TranslatorContext context)
+        {
+            this.classContext = context;
         }
     }
 }
