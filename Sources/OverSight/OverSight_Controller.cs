@@ -94,15 +94,12 @@ namespace OverSightHandler
                 // Boogie file
                 outFileName
             };
-
-            
             
             var boogieArgString = string.Join(" ", boogieArgs);
 
             Console.WriteLine($"\nSolidity to Boogie Conversion has successfully completed.");
             Console.WriteLine($"Refer to {outFileName} for boogie src code\n");
             Console.WriteLine($"Attempting to find proof.....");
-           
 
             //Console.WriteLine($"... running {BoogiePath} {boogieArgString}");
             var boogieOut = RunBinary(BoogieExecutablePath, boogieArgString);
@@ -159,7 +156,7 @@ namespace OverSightHandler
                 // if application reaches this stage, compilation of the program was successful
                 // The application now attemps to convert the solidity code to Boogie through the use of collection and syntax trees.
 
-                BoogieTranslator translator = new BoogieTranslator();
+                ConversionToBoogieTranslator translator = new ConversionToBoogieTranslator();
                 Console.WriteLine($"\nAttempting Conversion to Boogie.");
                 BoogieAST boogieAST = translator.Translate(solidityAST, ignoreMethods, translatorFlags);
 

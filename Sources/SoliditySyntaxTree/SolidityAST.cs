@@ -9,7 +9,6 @@ namespace SolidityAST
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using JsonSubTypes;
-    using System.IO;
     using System.Linq;
 
     public enum EnumContractKind
@@ -62,19 +61,26 @@ namespace SolidityAST
 
         private SourceUnitList BuildSourceUnitList(CompilerOutput compilerOutput)
         {
-            SourceUnitList sourceUnitList = new SourceUnitList();
+            SourceUnitList tempSourceUnits = new SourceUnitList();
             foreach (string filename in compilerOutput.Sources.Keys)
             {
                 SoliditySourceFile soliditySourceFile = compilerOutput.Sources[filename];
                 Debug.Assert(soliditySourceFile.Ast is SourceUnit);
-                sourceUnitList.AddSourceUnit(filename, soliditySourceFile.Ast as SourceUnit);
+                tempSourceUnits.AddSourceUnit(filename, soliditySourceFile.Ast as SourceUnit);
             }
-            return sourceUnitList;
+            return tempSourceUnits;
         }
 
+        /**
+         * Source units should never be null.
+         */
         public SourceUnitList GetSourceUnits()
         {
-            return sourceUnits;
+            if(sourceUnits != null)
+            {
+                return sourceUnits;
+            }
+            return null;
         }
 
         public Dictionary<int, ASTNode> GetIdToNodeMap()
