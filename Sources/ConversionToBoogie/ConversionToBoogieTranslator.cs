@@ -144,7 +144,7 @@ namespace SolToBoogie
     private void executeAxiomGenerator()
     {
         // add types, g;obal ghost variables, and axioms
-        GhostVarAndAxiomGenerator generator = new GhostVarAndAxiomGenerator(classTranslatorContext);
+        Variable_And_Axiom_Filter generator = new Variable_And_Axiom_Filter(classTranslatorContext);
         generator.Generate();
     }
 

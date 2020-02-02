@@ -113,7 +113,9 @@ namespace OverSightHandler
             if (CompareBoogieOutput(boogieOut))
             {
                 Console.WriteLine($"Validation/Verification has proved [successful].");
-                Console.WriteLine($"\n   *** Proof found! Formal Verification successful! (refer to {boogieOutFile})");
+                Console.WriteLine($"\n -- Proof located in Sol Contract.");
+                Console.WriteLine($"Verification Success, refer to {boogieOutFile} for further details");
+                    
                 Console.WriteLine($"\n{boogieOut}");
                 return true;
             }
