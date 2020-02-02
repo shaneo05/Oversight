@@ -1,15 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 
 namespace SolToBoogie
 {
     /// <summary>
     /// Class dedicated for helping parse command line arguements.
     /// </summary>
-    public static class ParseUtils
+    public static class OverSight_CMD_Utilities
     {
         // TODO: extract into a VerificationFlags structure 
         public static void ParseCommandLineArgs(string[] args,
