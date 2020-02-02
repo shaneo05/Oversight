@@ -19,7 +19,7 @@ namespace SolToBoogie
 
         bool generateInLineAttributes;
 
-        ProcedureTranslator procedureTranslator;
+        OverSight_ProcessHandler procedureTranslator;
 
         public BoogieAST Translate(AST solidityAST, HashSet<Tuple<string, string>> ignoredMethods, TranslatorFlags _translatorFlags = null)
         {
@@ -48,10 +48,10 @@ namespace SolToBoogie
             executeProcedureTranslator();
             executeFallBackGenerator();
 
-
+            //This will be called by default during proof attempts.
             if (context.TranslateFlags.DoModSetAnalysis)
             {
-                ModSetAnalysis modSetAnalysis = new ModSetAnalysis(context);
+                ModularAnalysis modSetAnalysis = new ModularAnalysis(context);
                 modSetAnalysis.PerformModSetAnalysis();
             }
 
@@ -60,7 +60,7 @@ namespace SolToBoogie
             // failure to add this, will r
             if (!context.TranslateFlags.NoHarness)
             {
-                HarnessGenerator harnessGenerator = new HarnessGenerator(context, this.procedureTranslator.ContractInvariants);
+                OverSight_ContractHarness harnessGenerator = new OverSight_ContractHarness(context, this.procedureTranslator.ContractInvariants);
                 harnessGenerator.Generate();
             }
             
@@ -81,7 +81,7 @@ namespace SolToBoogie
     {
         // de-sugar the solidity AST
         // will modify the AST
-        SolidityDesugaring desugaring = new SolidityDesugaring(classTranslatorContext);
+        OverSight_Solidity_DeConstruction desugaring = new OverSight_Solidity_DeConstruction(classTranslatorContext);
         sourceUnits.Accept(desugaring);
     }
 
@@ -137,7 +137,7 @@ namespace SolToBoogie
     private void executeFunctionEventResolver()
     {
         // resolve function and event definitions and determine the actual definition for a dynamic type
-        FunctionEventResolver functionEventResolver = new FunctionEventResolver(classTranslatorContext);
+        OverSight_Event_Resolver functionEventResolver = new OverSight_Event_Resolver(classTranslatorContext);
         functionEventResolver.Resolve();
     }
 
@@ -169,7 +169,7 @@ namespace SolToBoogie
     private void executeProcedureTranslator()
     {
         // translate procedures
-        ProcedureTranslator procTranslator = new ProcedureTranslator(classTranslatorContext, generateInLineAttributes);
+        OverSight_ProcessHandler procTranslator = new OverSight_ProcessHandler(classTranslatorContext, generateInLineAttributes);
         sourceUnits.Accept(procTranslator);
         this.procedureTranslator = procTranslator;
     }
@@ -178,7 +178,7 @@ namespace SolToBoogie
     private void executeFallBackGenerator()
     {
         // generate fallbacks
-        FallbackGenerator fallbackGenerator = new FallbackGenerator(classTranslatorContext);
+        OverSight_FallBackHandler fallbackGenerator = new OverSight_FallBackHandler(classTranslatorContext);
         fallbackGenerator.Generate();
     }
 }

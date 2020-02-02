@@ -12,12 +12,12 @@ namespace SolToBoogie
     public class accumulator_SOL_Modifiers : Generic_Syntax_Tree_Visitor
     {
         private TranslatorContext classContext;
-        private ProcedureTranslator localTranslator;
+        private OverSight_ProcessHandler localTranslator;
 
         public void setLocalReferences(TranslatorContext context)
         {
             this.classContext = context;
-            this.localTranslator = new ProcedureTranslator(context);
+            this.localTranslator = new OverSight_ProcessHandler(context);
         }
 
 

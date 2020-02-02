@@ -25,7 +25,7 @@ namespace OverSightHandler
             SolToBoogie.TranslatorFlags translatorFlags = new SolToBoogie.TranslatorFlags();
 
             
-            SolToBoogie.ParseUtils.ParseCommandLineArgs(args, out solFile, out entryPointContractName);
+            SolToBoogie.OverSight_CMD_Utilities.ParseCommandLineArgs(args, out solFile, out entryPointContractName);
 
 
             var overSightExecutor = new OverSightExecutor(
