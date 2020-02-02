@@ -26,11 +26,7 @@ namespace OverSightHandler
             HashSet<Tuple<string, string>> ignoredMethods;
             TranslatorFlags translatorFlags = new TranslatorFlags();
 
-            SolToBoogie.ParseUtils.ParseCommandLineArgs(args, out solFile,
-                                                        out entryPointContractName,
-                                                        out attemptProof,
-                                                        out ignoredMethods,
-                                                        ref translatorFlags);
+
 
             var overSightExecutor = new OverSightExecutor(
                                         Path.Combine(Directory.GetCurrentDirectory(), solFile), 
@@ -40,6 +36,9 @@ namespace OverSightHandler
                                         translatorFlags);
                         return overSightExecutor.Execute();
         }
+
+
+
 
 
         static void ShowCMDInterface()
