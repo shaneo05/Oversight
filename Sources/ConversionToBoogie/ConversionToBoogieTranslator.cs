@@ -35,7 +35,7 @@ namespace SolToBoogie
 
             executeSourceInfoCollector();
             executeSolDesugar();
-            executeContratCollection();
+            executeContractCollection();
             executeInheritanceCollector();
             executeStateVariableCollector();
             executeMapArrayCollector();
@@ -49,13 +49,21 @@ namespace SolToBoogie
             executeFallBackGenerator();
 
 
+            if (context.TranslateFlags.DoModSetAnalysis)
+            {
+                ModSetAnalysis modSetAnalysis = new ModSetAnalysis(context);
+                modSetAnalysis.PerformModSetAnalysis();
+            }
 
+            
             // generate harness for each contract
+            // failure to add this, will r
             if (!context.TranslateFlags.NoHarness)
             {
                 HarnessGenerator harnessGenerator = new HarnessGenerator(context, this.procedureTranslator.ContractInvariants);
                 harnessGenerator.Generate();
             }
+            
 
             return new BoogieAST(context.Program);
         }
@@ -77,7 +85,7 @@ namespace SolToBoogie
         sourceUnits.Accept(desugaring);
     }
 
-    private void executeContratCollection()
+    private void executeContractCollection()
     {
         // collect all contract definitions
         accumulator_SOL_Contract contractCollector = new accumulator_SOL_Contract();

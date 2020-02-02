@@ -3,9 +3,7 @@
 namespace SolToBoogie
 {
     using SolidityAST;
-    using BoogieAST;
     using System.Collections.Generic;
-    using System;
     using System.Diagnostics;
 
     /**
