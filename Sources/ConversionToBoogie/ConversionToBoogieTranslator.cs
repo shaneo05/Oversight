@@ -57,18 +57,6 @@ namespace SolToBoogie
                 harnessGenerator.Generate();
             }
 
-            if (context.TranslateFlags.ModelReverts)
-            {
-                RevertLogicGenerator reverGenerator = new RevertLogicGenerator(context);
-                reverGenerator.Generate();
-            }
-
-            if (context.TranslateFlags.DoModSetAnalysis)
-            {
-                ModSetAnalysis modSetAnalysis = new ModSetAnalysis(context);
-                modSetAnalysis.PerformModSetAnalysis();
-            }
-
             return new BoogieAST(context.Program);
         }
 
