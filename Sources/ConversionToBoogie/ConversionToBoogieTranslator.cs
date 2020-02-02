@@ -10,7 +10,7 @@ namespace SolToBoogie
 
     //Dedicated class to handle conversion from solidity AST to Boogie AST such that the verification power of Boogie.exe can be leveraged.
 
-    public class BoogieTranslator
+    public class ConversionToBoogieTranslator
     {
         // set of method@contract pairs whose translation is skipped
 

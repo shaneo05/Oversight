@@ -5,8 +5,6 @@ namespace OverSightHandler
     using System.Collections.Generic;
     using System.IO;
 
-    using SolToBoogie;
-
     /// <summary>
     /// Top level application to run OverSight to target proofs as well as scalable counterexamples
     /// </summary>
@@ -22,10 +20,12 @@ namespace OverSightHandler
             }
 
             string solFile, entryPointContractName;
-            bool attemptProof = false;
-            HashSet<Tuple<string, string>> ignoredMethods;
-            TranslatorFlags translatorFlags = new TranslatorFlags();
+            bool attemptProof = true;
+            HashSet<Tuple<string, string>> ignoredMethods = new HashSet<Tuple<string, string>>();
+            SolToBoogie.TranslatorFlags translatorFlags = new SolToBoogie.TranslatorFlags();
 
+            
+            SolToBoogie.ParseUtils.ParseCommandLineArgs(args, out solFile, out entryPointContractName);
 
 
             var overSightExecutor = new OverSightExecutor(
@@ -36,10 +36,6 @@ namespace OverSightHandler
                                         translatorFlags);
                         return overSightExecutor.Execute();
         }
-
-
-
-
 
         static void ShowCMDInterface()
         {
