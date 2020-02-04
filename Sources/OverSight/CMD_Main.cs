@@ -12,6 +12,7 @@ namespace OverSightHandler
     {
         public static int Main(string[] args)
         {
+            //Entry point, if expected length is less than two, then prompt user with guidance such that the correct number of arguements can be entered 
             int expectedLength = 2;
             if (args.Length < expectedLength)
             {
@@ -25,10 +26,11 @@ namespace OverSightHandler
             SolToBoogie.TranslatorFlags translatorFlags = new SolToBoogie.TranslatorFlags();
 
             
+            //parse the index command line arguements to sol file being index 0 and entryPointContractName as index 1
             SolToBoogie.OverSight_CMD_Utilities.ParseCommandLineArgs(args, out solFile, out entryPointContractName);
 
-
-            var overSightExecutor = new OverSightExecutor(
+            //Feed these to the OverSight
+            var overSightExecutor = new OverSightController(
                                         Path.Combine(Directory.GetCurrentDirectory(), solFile), 
                                         entryPointContractName,
                                         ignoredMethods,

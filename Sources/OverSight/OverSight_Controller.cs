@@ -13,7 +13,7 @@ namespace OverSightHandler
     using System.IO;
 
 
-    internal class OverSightExecutor
+    internal class OverSightController
     {
         //Class Variables
 
@@ -39,7 +39,7 @@ namespace OverSightHandler
         private HashSet<Tuple<string, string>> ignoreMethods;
         private TranslatorFlags translatorFlags;
 
-        public OverSightExecutor(string solidityFilePath, string contractName, HashSet<Tuple<string, string>> ignoreMethods,bool tryProofFlag, TranslatorFlags _translatorFlags = null)
+        public OverSightController(string solidityFilePath, string contractName, HashSet<Tuple<string, string>> ignoreMethods,bool tryProofFlag, TranslatorFlags _translatorFlags = null)
         {
             this.SolidityFilePath = solidityFilePath;
             this.ContractName = contractName;
@@ -57,19 +57,25 @@ namespace OverSightHandler
 
             this.translatorFlags = _translatorFlags;
         }
-
+        /**
+         * Function is called vis CMD_Main with attempt proof being a standard true value without user invocation
+         */
         public int Execute()
         {
             // call SolToBoogie on specFilePath
             //This should be called on execution failure
-            if (!RunSolidityToBoogieConversion())
+            if (RunSolidityToBoogieConversion() == false)
             {
+                //Conversion was attempted but failed
+                //Value of 1 represents failure
                 return 1;
             }
 
-            if (AttemptProof)   //if proofing is true attempt to find a proof via FindProof();
+            if (AttemptProof == true)   //if proofing is true attempt to find a proof via FindProof();
             {
-                if (FindProof())
+                bool success = FindProof();
+
+                if (success == true)
                 {
                     return 0;
                 }
@@ -82,19 +88,21 @@ namespace OverSightHandler
         {
             var boogieArgs = new List<string>
             {
+                //The follow command will be executed to attempt verification of the contract 
                 //-doModSetAnalysis -inline:spec (was assert) -noinfer -contractInfer -proc:BoogieEntry_* out.bpl
                 //
                 $"-doModSetAnalysis",
                 $"-inline:spec", //was assert to before to fail when reaching recursive functions
-                $"-noinfer",
+                $"-noinfer", //no inference,        However can it be implemented later
                 $"-inlineDepth:{translatorFlags.InlineDepthForBoogie}", //contractInfer can perform inlining as well
                 // main method
                 $"-proc:BoogieEntry_*",
-                // Boogie file
+                // The boogie file to perform verification on , in this case will be ConversionToBoogie.bpl
                 outFileName
             };
             
             var boogieArgString = string.Join(" ", boogieArgs);
+            //BoogieArgString will represent -doModSetAnalysis -inline:spec (was assert) -noinfer -contractInfer -proc:BoogieEntry_* out.bpl
 
             Console.WriteLine($"\nSolidity to Boogie Conversion has successfully completed.");
             Console.WriteLine($"Refer to {outFileName} for boogie src code\n");
@@ -114,7 +122,7 @@ namespace OverSightHandler
             {
                 Console.WriteLine($"Validation/Verification has proved [successful].");
                 Console.WriteLine($"\n -- Proof located in Sol Contract.");
-                Console.WriteLine($"Verification Success, refer to {boogieOutFile} for further details");
+                Console.WriteLine($"      Refer to {boogieOutFile} for further details");
                     
                 Console.WriteLine($"\n{boogieOut}");
                 return true;
@@ -178,6 +186,7 @@ namespace OverSightHandler
 
         private string RunBinary(string cmdName, string arguments)
         {
+            // 
             Process p = new Process();
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardInput = false;
@@ -197,12 +206,9 @@ namespace OverSightHandler
             p.StandardOutput.Close();
             p.StandardError.Close();
 
-            // TODO: should set up a timeout here
-            // but it seems there is a problem if we execute corral using mono
-
             return outputBinary;
         }
-        
+        /*
         //Get other stuff fixed before this function, designate priority of this last
         private bool CompareCorralOutput(string expected, string actual)
         {
@@ -220,6 +226,7 @@ namespace OverSightHandler
             }
             return false;
         }
+        */
 
         private bool CompareBoogieOutput(string actual)
         {
