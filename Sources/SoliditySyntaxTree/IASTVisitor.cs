@@ -7,7 +7,7 @@
         bool Visit(PragmaDirective node);
         bool Visit(UsingForDirective node);
         bool Visit(ImportDirective node);
-        bool Visit(ContractDefinition node);
+        bool TreeNodeVisitor(ContractDefinition node);
         bool Visit(InheritanceSpecifier node);
         bool Visit(FunctionDefinition node);
         bool Visit(ParameterList node);

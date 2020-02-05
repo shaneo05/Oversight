@@ -76,7 +76,7 @@ namespace ConversionToBoogie
             contractInvariants = new Dictionary<string, List<BoogieExpr>>();
         }
         
-        public override bool Visit(ContractDefinition node)
+        public override bool TreeNodeVisitor(ContractDefinition node)
         {
             preTranslationAction(node);
 

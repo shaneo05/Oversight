@@ -22,7 +22,7 @@
 
         public virtual bool Visit(ImportDirective node) { return CommonVisit(node); }
 
-        public virtual bool Visit(ContractDefinition node) { return CommonVisit(node); }
+        public virtual bool TreeNodeVisitor(ContractDefinition node) { return CommonVisit(node); }
 
         public virtual bool Visit(InheritanceSpecifier node) { return CommonVisit(node); }
 

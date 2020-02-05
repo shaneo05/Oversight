@@ -14,7 +14,7 @@ namespace ConversionToBoogie
             this.classContext = context;
         }
 
-        public override bool Visit(ContractDefinition node)
+        public override bool TreeNodeVisitor(ContractDefinition node)
         {
             foreach (ASTNode child in node.Nodes)
             {

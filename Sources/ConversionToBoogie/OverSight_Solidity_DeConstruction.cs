@@ -25,7 +25,7 @@ namespace ConversionToBoogie
             this.context = context;
         }
 
-        public override bool Visit(ContractDefinition node)
+        public override bool TreeNodeVisitor(ContractDefinition node)
         {
             currentContract = node;
             return true;

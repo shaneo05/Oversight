@@ -8,7 +8,7 @@ namespace ConversionToBoogie
     {
         private TranslatorContext classContext;
 
-        public override bool Visit(ContractDefinition node)
+        public override bool TreeNodeVisitor(ContractDefinition node)
         {
             if(classContext != null)
                 classContext.AddContract(node);

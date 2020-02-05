@@ -331,7 +331,7 @@ namespace Sol_Syntax_Tree
 
         public override void Accept(IASTVisitor visitor)
         {
-            if (visitor.Visit(this))
+            if (visitor.TreeNodeVisitor(this))
             {
                 Utils.AcceptList(BaseContracts, visitor);
                 Utils.AcceptList(Nodes, visitor);
