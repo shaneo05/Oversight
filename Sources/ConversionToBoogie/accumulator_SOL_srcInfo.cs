@@ -9,7 +9,7 @@ namespace ConversionToBoogie
     public class accumulator_SOL_srcInfo : Generic_Syntax_Tree_Visitor
     {
         // require the SourceDirectory field is filled
-        private TranslatorContext classContext;
+        private TranslatorContext classTranslatorContext;
 
         // current source unit the visitor is visiting
         private SourceUnit currentSourceUnit;
@@ -19,14 +19,12 @@ namespace ConversionToBoogie
 
         public void setContext(TranslatorContext context)
         {
-            this.classContext = context;
+            this.classTranslatorContext = context;
         }
-
-
 
         public override bool Visit(SourceUnitList sourceUnits)
         {
-            string srcPath = classContext.SourceDirectory;
+            string srcPath = classTranslatorContext.SourceDirectory;
             foreach (KeyValuePair<string, SourceUnit> entry in sourceUnits.FilenameToSourceUnitMap)
             {
                 string srcFileName = Path.Combine(srcPath, entry.Key);
@@ -47,14 +45,14 @@ namespace ConversionToBoogie
             if (!(node is SourceUnitList))
             {
                 string relativePath = currentSourceUnit.AbsolutePath;
-                string absolutePath = Path.Combine(classContext.SourceDirectory, relativePath);
+                string absolutePath = Path.Combine(classTranslatorContext.SourceDirectory, relativePath);
 
                 string srcInfo = node.Src;
                 string[] tokens = srcInfo.Split(':');
                 int startPosition = int.Parse(tokens[0]);
                 int lineNumber = MapToLineNumber(relativePath, startPosition);
 
-                classContext.AddSourceInfoForASTNode(node, absolutePath, lineNumber);
+                classTranslatorContext.AddSourceInfoForASTNode(node, absolutePath, lineNumber);
             }
         }
 
@@ -84,11 +82,7 @@ namespace ConversionToBoogie
             string src = file.ReadToEnd();
             file.Close();
 
-            // About newline chars in UNIX and Windows:
-            // The only valid new chars are \r\n and \n, but not \r or \n\r
-            // The following code does make sure that if there are \r or \n\r in the file, it doesn't cause infinite looping.
-            // However, the code is either not properly translated or ConcurrencyExplorer shows highlight multiple lines at each step.
-            // The valid chars \r\n and \n can be mixed in a sol file.
+           
             int pos_r, pos_n;
             do
             {

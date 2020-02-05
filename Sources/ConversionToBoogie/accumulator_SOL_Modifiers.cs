@@ -23,18 +23,13 @@ namespace ConversionToBoogie
 
         public override bool Visit(ModifierDefinition modifier)
         {
-            //if (modifier.Parameters.Length() > 0)
-            //{
-            //    throw new System.Exception("modifiers with parameters not implemented");
-            //}
             var modifierInParams = TranslatorUtilities.GetDefaultInParams();
             
             foreach (var parameter in modifier.Parameters.Parameters)
             {
-                string name = null;
-                name = TranslatorUtilities.GetCanonicalLocalVariableName(parameter, classContext);
+                string solidityTypeName = TranslatorUtilities.GetCanonicalLocalVariableName(parameter, classContext);
                 BoogieType type = TranslatorUtilities.GetBoogieTypeFromSolidityTypeName(parameter.TypeName);
-                modifierInParams.Add(new BoogieFormalParam(new BoogieTypedIdent(name, type)));
+                modifierInParams.Add(new BoogieFormalParam(new BoogieTypedIdent(solidityTypeName, type)));
             }
 
             Block body = modifier.Body;
@@ -45,10 +40,6 @@ namespace ConversionToBoogie
             bool translatingPre = true;
             foreach (Statement statement in body.Statements)
             {
-                if (statement is VariableDeclarationStatement)
-                {
-                    throw new System.Exception("locals within modifiers not supported");
-                }
                 if (statement is PlaceholderStatement)
                 {
                     translatingPre = false;

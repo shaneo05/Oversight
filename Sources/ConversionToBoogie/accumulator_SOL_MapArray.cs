@@ -2,42 +2,45 @@
 
 namespace ConversionToBoogie
 {
-    using System.Diagnostics;
     using Sol_Syntax_Tree;
 
+    /*
+     * Accumulator class to handle Mappings located within the given sol contrat 
+     */
     public class accumulator_SOL_MapArray : Generic_Syntax_Tree_Visitor
     {
-        private TranslatorContext classContext;
+        private TranslatorContext classTranslationContext;
 
         // current contract that the visitor is visiting
         private ContractDefinition currentContract = null;
 
         public void setContext(TranslatorContext context)
         {
-            this.classContext = context;
+            this.classTranslationContext = context;
         }
-        public override bool TreeNodeVisitor(ContractDefinition node)
+        public override bool ContractDefinition_VisitNode(ContractDefinition node)
         {
             currentContract = node;
             return true;
         }
 
-        public override void EndVisit(ContractDefinition node)
+        public override void ContractDefinition_VisitCompletion(ContractDefinition node)
         {
             currentContract = null;
         }
 
-        public override bool Visit(VariableDeclaration node)
+        public override bool VariableDeclaration_VisitNode(VariableDeclaration node)
         {
-            Debug.Assert(currentContract != null);
-
-            if (node.TypeName is Mapping)
+            if (currentContract != null)
             {
-                classContext.AddMappingtoContract(currentContract, node);
-            }
-            else if (node.TypeName is ArrayTypeName)
-            {
-                classContext.AddArrayToContract(currentContract, node);
+                if (node.TypeName is Mapping)
+                {
+                    classTranslationContext.AddMappingtoContract(currentContract, node);
+                }
+                else if (node.TypeName is ArrayTypeName)
+                {
+                    classTranslationContext.AddArrayToContract(currentContract, node);
+                }
             }
             return false;
         }

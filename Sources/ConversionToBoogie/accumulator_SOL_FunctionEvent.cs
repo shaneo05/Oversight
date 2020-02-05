@@ -22,28 +22,32 @@ namespace ConversionToBoogie
             this.classContext = context;
         }
 
-        public override bool TreeNodeVisitor(ContractDefinition node)
+        public override bool ContractDefinition_VisitNode(ContractDefinition node)
         {
             currentContract = node;
             return true;
         }
 
-        public override void EndVisit(ContractDefinition node)
+        public override void ContractDefinition_VisitCompletion(ContractDefinition node)
         {
             currentContract = null;
         }
 
-        public override bool Visit(EventDefinition node)
+        public override bool EventDefinition_VisitNode(EventDefinition node)
         {
-            Debug.Assert(currentContract != null);
-            classContext.AddEventToContract(currentContract, node);
+            if (classContext != null)
+            {
+                classContext.AddEventToContract(currentContract, node);
+            }
             return false;
         }
 
-        public override bool Visit(FunctionDefinition node)
+        public override bool FunctionDefinition_VisiNode(FunctionDefinition node)
         {
-            Debug.Assert(currentContract != null);
-            classContext.AddFunctionToContract(currentContract, node);
+            if (classContext != null)
+            {
+                classContext.AddFunctionToContract(currentContract, node);
+            }
             return false;
         }
     }

@@ -13,7 +13,7 @@ namespace ConversionToBoogie
     {
         private TranslatorContext classTransContext;
 
-        public override bool TreeNodeVisitor(ContractDefinition nodeCollection)
+        public override bool ContractDefinition_VisitNode(ContractDefinition nodeCollection)
         {
             bool completion = false;
 

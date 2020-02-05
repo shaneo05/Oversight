@@ -98,7 +98,7 @@ namespace ConversionToBoogie
         // collect all sub types for each contract
         accumulator_SOL_Inheritance inheritanceCollector = new accumulator_SOL_Inheritance();
         inheritanceCollector.setContext(classTranslatorContext);
-        inheritanceCollector.Collect();
+        inheritanceCollector.SearchForBaseInheritance();
 
     }
 

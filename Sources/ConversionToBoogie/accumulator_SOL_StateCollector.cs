@@ -7,22 +7,22 @@ namespace ConversionToBoogie
 
     public class accumulator_SOL_StateCollector : Generic_Syntax_Tree_Visitor
     {
-        private TranslatorContext classContext;
+        private TranslatorContext classTranslatorContext;
 
         public void setContext(TranslatorContext context)
         {
-            this.classContext = context;
+            this.classTranslatorContext = context;
         }
 
-        public override bool TreeNodeVisitor(ContractDefinition node)
+        public override bool ContractDefinition_VisitNode(ContractDefinition node)
         {
             foreach (ASTNode child in node.Nodes)
             {
-                if (child is VariableDeclaration varDecl)
+                if (child is VariableDeclaration variableDeclarationObj)
                 {
-                    Debug.Assert(varDecl.StateVariable, $"{varDecl.Name} is not a state variable");
+                    Debug.Assert(variableDeclarationObj.StateVariable, $"{variableDeclarationObj.Name} is not a state variable");
                     // add all state variables to the context
-                    classContext.AddStateVarToContract(node, varDecl);
+                    classTranslatorContext.AddStateVarToContract(node, variableDeclarationObj);
                 }
             }
             return false;

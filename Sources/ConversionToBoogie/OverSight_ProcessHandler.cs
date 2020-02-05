@@ -76,7 +76,7 @@ namespace ConversionToBoogie
             contractInvariants = new Dictionary<string, List<BoogieExpr>>();
         }
         
-        public override bool TreeNodeVisitor(ContractDefinition node)
+        public override bool ContractDefinition_VisitNode(ContractDefinition node)
         {
             preTranslationAction(node);
 
@@ -268,7 +268,7 @@ namespace ConversionToBoogie
                 currentStmtList.AddStatement(callCmd);
             }
         }
-        public override bool Visit(FunctionDefinition node)
+        public override bool FunctionDefinition_VisiNode(FunctionDefinition node)
         {
             preTranslationAction(node);
             // OverSightAssert(node.IsConstructor || node.Modifiers.Count <= 1, "Multiple Modifiers are not supported yet");

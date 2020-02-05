@@ -22,11 +22,11 @@
 
         public virtual bool Visit(ImportDirective node) { return CommonVisit(node); }
 
-        public virtual bool TreeNodeVisitor(ContractDefinition node) { return CommonVisit(node); }
+        public virtual bool ContractDefinition_VisitNode(ContractDefinition node) { return CommonVisit(node); }
 
         public virtual bool Visit(InheritanceSpecifier node) { return CommonVisit(node); }
 
-        public virtual bool Visit(FunctionDefinition node) { return CommonVisit(node); }
+        public virtual bool FunctionDefinition_VisiNode(FunctionDefinition node) { return CommonVisit(node); }
 
         public virtual bool Visit(ParameterList node) { return CommonVisit(node); }
 
@@ -34,7 +34,7 @@
 
         public virtual bool Visit(ModifierInvocation node) { return CommonVisit(node); }
 
-        public virtual bool Visit(EventDefinition node) { return CommonVisit(node); }
+        public virtual bool EventDefinition_VisitNode(EventDefinition node) { return CommonVisit(node); }
 
         public virtual bool Visit(StructDefinition node) { return CommonVisit(node); }
 
@@ -42,7 +42,7 @@
 
         public virtual bool Visit(EnumValue node) { return CommonVisit(node); }
 
-        public virtual bool Visit(VariableDeclaration node) { return CommonVisit(node); }
+        public virtual bool VariableDeclaration_VisitNode(VariableDeclaration node) { return CommonVisit(node); }
 
         public virtual bool Visit(ElementaryTypeName node) { return CommonVisit(node); }
 
@@ -115,7 +115,7 @@
 
         public virtual void EndVisit(ImportDirective node) { CommonEndVisit(node); }
 
-        public virtual void EndVisit(ContractDefinition node) { CommonEndVisit(node); }
+        public virtual void ContractDefinition_VisitCompletion(ContractDefinition node) { CommonEndVisit(node); }
 
         public virtual void EndVisit(InheritanceSpecifier node) { CommonEndVisit(node); }
 

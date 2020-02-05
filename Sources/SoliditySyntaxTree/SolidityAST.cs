@@ -331,12 +331,12 @@ namespace Sol_Syntax_Tree
 
         public override void Accept(IASTVisitor visitor)
         {
-            if (visitor.TreeNodeVisitor(this))
+            if (visitor.ContractDefinition_VisitNode(this))
             {
                 Utils.AcceptList(BaseContracts, visitor);
                 Utils.AcceptList(Nodes, visitor);
             }
-            visitor.EndVisit(this);
+            visitor.ContractDefinition_VisitCompletion(this);
         }
 
         public override T Accept<T>(IASTGenericVisitor<T> visitor)
@@ -447,7 +447,7 @@ namespace Sol_Syntax_Tree
 
         public override void Accept(IASTVisitor visitor)
         {
-            if (visitor.Visit(this))
+            if (visitor.FunctionDefinition_VisiNode(this))
             {
                 Parameters.Accept(visitor);
                 if (ReturnParameters != null)
@@ -622,7 +622,7 @@ namespace Sol_Syntax_Tree
 
         public override void Accept(IASTVisitor visitor)
         {
-            if (visitor.Visit(this))
+            if (visitor.EventDefinition_VisitNode(this))
             {
                 Parameters.Accept(visitor);
             }
@@ -760,7 +760,7 @@ namespace Sol_Syntax_Tree
 
         public override void Accept(IASTVisitor visitor)
         {
-            if (visitor.Visit(this))
+            if (visitor.VariableDeclaration_VisitNode(this))
             {
                 if (TypeName != null)
                 {

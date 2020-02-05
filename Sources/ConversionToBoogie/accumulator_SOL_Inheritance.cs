@@ -2,28 +2,37 @@
 
 namespace ConversionToBoogie
 {
-    using System.Diagnostics;
     using Sol_Syntax_Tree;
 
+    /**
+     * Accumulator for any references to inheritance that may be used in a contract.
+     */
     public class accumulator_SOL_Inheritance
     {
         // require the ContractDefinitions is populated
-        private TranslatorContext classContext;
+        private TranslatorContext classTranslationContext;
 
         public void setContext(TranslatorContext context)
         {
-            this.classContext = context;
+            this.classTranslationContext = context;
         }
 
-        public void Collect()
+        /**
+         * Function to filter through the current list of contract definitions stored in the shared translation context.
+         * From that point, the for loop will attempt to retrieve the IDs of the base contracts 
+         */
+        public void SearchForBaseInheritance()
         {
-            foreach (ContractDefinition contract in classContext.ContractDefinitions)
+            foreach (ContractDefinition currentContract in classTranslationContext.ContractDefinitions)
             {
-                foreach (int baseId in contract.LinearizedBaseContracts)
+                foreach (int baseContractID in currentContract.LinearizedBaseContracts)
                 {
-                    ContractDefinition baseContract = classContext.GetASTNodeById(baseId) as ContractDefinition;
-                    Debug.Assert(baseContract != null);
-                    classContext.AddSubTypeToContract(baseContract, contract);
+                    ContractDefinition baseCurrentContract = classTranslationContext.GetASTNodeById(baseContractID) as ContractDefinition;
+
+                    if (baseCurrentContract != null)
+                    {
+                        classTranslationContext.AddSubTypeToContract(baseCurrentContract, currentContract);
+                    }
                 }
             }
         }

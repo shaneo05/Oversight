@@ -25,18 +25,18 @@ namespace ConversionToBoogie
             this.context = context;
         }
 
-        public override bool TreeNodeVisitor(ContractDefinition node)
+        public override bool ContractDefinition_VisitNode(ContractDefinition node)
         {
             currentContract = node;
             return true;
         }
 
-        public override void EndVisit(ContractDefinition node)
+        public override void ContractDefinition_VisitCompletion(ContractDefinition node)
         {
             currentContract = null;
         }
 
-        public override bool Visit(FunctionDefinition node)
+        public override bool FunctionDefinition_VisiNode(FunctionDefinition node)
         {
             Debug.Assert(currentContract != null);
             currentFunction = node;
@@ -57,7 +57,7 @@ namespace ConversionToBoogie
                     node.Name = "FallbackMethod";
                 }
             }
-            return base.Visit(node);
+            return base.FunctionDefinition_VisiNode(node);
         }
 
         public override bool Visit(PlaceholderStatement node)
