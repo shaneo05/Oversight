@@ -208,25 +208,7 @@ namespace OverSightHandler
 
             return outputBinary;
         }
-        /*
-        //Get other stuff fixed before this function, designate priority of this last
-        private bool CompareCorralOutput(string expected, string actual)
-        {
-            if (actual == null)
-            {
-                return false;
-            }
-            string[] actualList = actual.Split("Boogie verification time");
-            if (actualList.Length == 2)
-            {
-                if (actualList[0].Contains(expected))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-        */
+
 
         private bool CompareBoogieOutput(string actual)
         {
