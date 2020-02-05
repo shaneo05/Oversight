@@ -1,11 +1,11 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using SolidityAST;
+    using Sol_Syntax_Tree;
 
     /**
     * Determine the visible state variables for each contract considering

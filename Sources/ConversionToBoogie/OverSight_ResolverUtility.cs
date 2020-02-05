@@ -1,10 +1,10 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System.Collections.Generic;
     using System.Diagnostics;
-    using SolidityAST;
+    using Sol_Syntax_Tree;
 
     public class OverSight_GenericResolver
     {

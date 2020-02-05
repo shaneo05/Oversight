@@ -1,12 +1,12 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using BoogieAST;
-    using SolidityAST;
+    using Boogie_Syntax_Tree;
+    using Sol_Syntax_Tree;
 
     public class Variable_And_Axiom_Filter
     {

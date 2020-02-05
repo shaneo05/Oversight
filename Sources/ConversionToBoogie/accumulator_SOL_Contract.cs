@@ -1,8 +1,8 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
-    using SolidityAST;
+    using Sol_Syntax_Tree;
 
     public class accumulator_SOL_Contract : Generic_Syntax_Tree_Visitor
     {

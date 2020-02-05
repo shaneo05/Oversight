@@ -1,4 +1,4 @@
-﻿namespace SolidityAST
+﻿namespace Sol_Syntax_Tree
 {
     using System.Diagnostics;
     using System.Collections.Generic;

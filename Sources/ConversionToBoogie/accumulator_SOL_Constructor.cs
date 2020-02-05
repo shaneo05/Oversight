@@ -1,8 +1,8 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
-    using SolidityAST;
+    using Sol_Syntax_Tree;
 
     /**
      * SubInheritance of AST Visittor 

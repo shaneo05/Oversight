@@ -1,6 +1,6 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System;
     using System.Collections.Generic;
@@ -8,8 +8,8 @@ namespace SolToBoogie
     using System.Globalization;
     using System.Linq;
     using System.Numerics;
-    using BoogieAST;
-    using SolidityAST;
+    using Boogie_Syntax_Tree;
+    using Sol_Syntax_Tree;
 
     public class OverSight_ProcessHandler : Generic_Syntax_Tree_Visitor
     {

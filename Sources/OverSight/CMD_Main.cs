@@ -7,7 +7,7 @@ namespace OverSightHandler
     using System.IO;
 
     /// <summary>
-    /// Top level application to run OverSight to target proofs in sol contracts and analyse areas of potential future failure for user feedback
+    /// Main Entry to OverSight to target proofs in sol contracts and analyse areas of potential future failure for user feedback
     /// </summary>
     class CMD_Main
     {
@@ -38,11 +38,11 @@ namespace OverSightHandler
 
             
             HashSet<Tuple<string, string>> ignoredMethods = new HashSet<Tuple<string, string>>();
-            SolToBoogie.TranslatorFlags translatorFlags = new SolToBoogie.TranslatorFlags();
+            ConversionToBoogie.TranslatorFlags translatorFlags = new ConversionToBoogie.TranslatorFlags();
 
             
             //parse the index command line arguements to sol file being index 0 and entryPointContractName as index 1
-            SolToBoogie.OverSight_CMD_Utilities.ParseCommandLineArgs(args, out solFile, out classContractName);
+            ConversionToBoogie.OverSight_CMD_Utilities.ParseCommandLineArgs(args, out solFile, out classContractName);
 
             //Feed these to the OverSight constructor as parameters to begin proof conversion.
             var overSightExecutor = new OverSightController(
@@ -52,7 +52,7 @@ namespace OverSightHandler
                                         attemptProof,
                                         translatorFlags);
             
-            return overSightExecutor.Execute(); //Begins execution of program in finding proof.
+            return overSightExecutor.startOverSight(); //Begins execution of program in finding proof.
             //The above call to execute should result in a 0 for successful completion.
         }
 

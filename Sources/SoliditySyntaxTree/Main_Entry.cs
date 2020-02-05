@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
-namespace SolidityAST
+namespace Sol_Syntax_Tree
 {
     using System;
     using System.IO;

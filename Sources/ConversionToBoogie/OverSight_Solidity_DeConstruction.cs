@@ -1,10 +1,10 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System.Collections.Generic;
     using System.Diagnostics;
-    using SolidityAST;
+    using Sol_Syntax_Tree;
 
     // desugar: add function names for constructors
     public class OverSight_Solidity_DeConstruction : Generic_Syntax_Tree_Visitor

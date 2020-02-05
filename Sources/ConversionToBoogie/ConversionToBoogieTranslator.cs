@@ -1,12 +1,12 @@
 
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System;
     using System.Collections.Generic;
 
-    using BoogieAST;
-    using SolidityAST;
+    using Boogie_Syntax_Tree;
+    using Sol_Syntax_Tree;
 
     //Dedicated class to handle conversion from solidity AST to Boogie AST such that the verification power of Boogie.exe can be leveraged.
 

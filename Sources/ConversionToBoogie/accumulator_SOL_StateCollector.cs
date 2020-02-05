@@ -1,9 +1,9 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System.Diagnostics;
-    using SolidityAST;
+    using Sol_Syntax_Tree;
 
     public class accumulator_SOL_StateCollector : Generic_Syntax_Tree_Visitor
     {

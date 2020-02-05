@@ -1,11 +1,11 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System.Collections.Generic;
     using System.Diagnostics;
-    using BoogieAST;
-    using SolidityAST;
+    using Boogie_Syntax_Tree;
+    using Sol_Syntax_Tree;
 
     /**
      * Generate harness for each contract

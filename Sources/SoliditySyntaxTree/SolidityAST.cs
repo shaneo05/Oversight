@@ -1,6 +1,6 @@
 ﻿
 
-namespace SolidityAST
+namespace Sol_Syntax_Tree
 {
     using System;
     using System.Collections.Generic;

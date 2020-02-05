@@ -1,9 +1,9 @@
 
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
-    using SolidityAST;
-    using BoogieAST;
+    using Sol_Syntax_Tree;
+    using Boogie_Syntax_Tree;
     using System.Collections.Generic;
 
     /**

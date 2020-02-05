@@ -1,9 +1,9 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System.Diagnostics;
-    using SolidityAST;
+    using Sol_Syntax_Tree;
 
     /**
      * Collect all function/event definitions and put them in the translator context.

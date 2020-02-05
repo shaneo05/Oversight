@@ -1,4 +1,4 @@
-﻿namespace SolidityAST
+﻿namespace Sol_Syntax_Tree
 {
     public class Generic_Syntax_Tree_Visitor : IASTVisitor
     {

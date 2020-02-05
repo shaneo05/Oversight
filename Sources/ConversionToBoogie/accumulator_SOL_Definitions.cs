@@ -1,8 +1,8 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
-    using SolidityAST;
+    using Sol_Syntax_Tree;
     using System.Collections.Generic;
     using System.Diagnostics;
 

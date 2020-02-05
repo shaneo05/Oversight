@@ -2,36 +2,36 @@
 
 namespace OverSightHandler
 {
-
-    using SolidityAST;
-    using BoogieAST;
-    using SolToBoogie;
-
     using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
 
+    using System.Collections.Generic;
+    using System.Diagnostics;
 
-    internal class OverSightController
+    using Sol_Syntax_Tree;
+    using Boogie_Syntax_Tree;
+
+    using ConversionToBoogie;
+
+    class OverSightController
     {
         //Class Variables
 
         //Loc of Solidity File Path
-        private string SolidityFilePath;
+        private string solidityFilePath;
         //Loc of Solidity File Directory
-        private string SolidityFileDir;
+        private string solidityFileDir;
 
         //Loc of Solidity Contract Name
-        private string ContractName;
+        private string contractName;
 
-        //Loc of BoogieExecutablePath
-        private string BoogieExecutablePath;
-        //Loc of SolidityCompilerPath
-        private string SolidityCompilerPath;
+        //Location of Boogie Executable on runnable machine
+        private string boogieExecutablePath;
+        //Location of Solidity Compiler on runnable machine
+        private string solidityCompilerPath;
 
         //Bool attempt proof value
-        private bool AttemptProof;
+        private bool attemptProof;
 
         //BPL file containing boogie output 
         private readonly string outFileName = "BoogieConversion.bpl";
@@ -41,39 +41,40 @@ namespace OverSightHandler
 
         public OverSightController(string solidityFilePath, string contractName, HashSet<Tuple<string, string>> ignoreMethods,bool tryProofFlag, TranslatorFlags _translatorFlags = null)
         {
-            this.SolidityFilePath = solidityFilePath;
-            this.ContractName = contractName;
-            this.SolidityFileDir = Path.GetDirectoryName(solidityFilePath);
+            this.solidityFilePath = solidityFilePath;
+            this.contractName = contractName;
+            solidityFileDir = Path.GetDirectoryName(solidityFilePath);
 
             Console.WriteLine($"Application arguments accepted.\n");
             Console.WriteLine($"Running OverSight on Solidity Contract : {contractName}\n");
 
             //Due to no automation, the download path of the solidity and boogie compilers/exe must be manually stated
+            // This is for the time being and can be subject to change at a later date
             //This is subject to change within the next week as dynamic flexibility is required across multiple machines
-            this.BoogieExecutablePath = "C:\\Users\\shane\\Desktop\\TempOversight\\bin\\Debug\\boogie.exe";
-            this.SolidityCompilerPath = "C:\\Users\\shane\\Desktop\\TempOversight\\bin\\Debug\\solc.exe";
+            boogieExecutablePath = "C:\\Users\\shane\\Desktop\\TempOversight\\bin\\Debug\\boogie.exe";
+            solidityCompilerPath = "C:\\Users\\shane\\Desktop\\TempOversight\\bin\\Debug\\solc.exe";
             this.ignoreMethods = new HashSet<Tuple<string, string>>(ignoreMethods);
-            this.AttemptProof = tryProofFlag;
+            attemptProof = tryProofFlag;
 
-            this.translatorFlags = _translatorFlags;
+            translatorFlags = _translatorFlags;
         }
         /**
-         * Function is called vis CMD_Main with attempt proof being a standard true value without user invocation
+         * Function is called via CMD_Main with attempt proof being a standard true value without user invocation
          */
-        public int Execute()
+        public int startOverSight()
         {
             // call SolToBoogie on specFilePath
             //This should be called on execution failure
-            if (RunSolidityToBoogieConversion() == false)
+            if (runSolidityToBoogieConversion() == false)
             {
                 //Conversion was attempted but failed
                 //Value of 1 represents failure
                 return 1;
             }
 
-            if (AttemptProof == true)   //if proofing is true attempt to find a proof via FindProof();
+            if (attemptProof == true)   //if proofing is true attempt to find a proof via FindProof();
             {
-                bool success = FindProof();
+                bool success = searchForProofs();
 
                 if (success == true)
                 {
@@ -84,9 +85,10 @@ namespace OverSightHandler
             return 0;
         }
 
-        private bool FindProof()
+        private bool searchForProofs()
         {
-            var boogieArgs = new List<string>
+            //Boogie arguments as a list string 
+            var verificationArguments = new List<string>
             {
                 //The follow command will be executed to attempt verification of the contract 
                 //-doModSetAnalysis -inline:spec (was assert) -noinfer -contractInfer -proc:BoogieEntry_* out.bpl
@@ -101,24 +103,24 @@ namespace OverSightHandler
                 outFileName
             };
             
-            var boogieArgString = string.Join(" ", boogieArgs);
+            var verificationArguementsAsString = string.Join(" ", verificationArguments);
             //BoogieArgString will represent -doModSetAnalysis -inline:spec (was assert) -noinfer -contractInfer -proc:BoogieEntry_* out.bpl
 
             Console.WriteLine($"\nSolidity to Boogie Conversion has successfully completed.");
             Console.WriteLine($"Refer to {outFileName} for boogie src code\n");
             Console.WriteLine($"Attempting to find proof.....");
 
-            //Console.WriteLine($"... running {BoogiePath} {boogieArgString}");
-            var boogieOut = RunBinary(BoogieExecutablePath, boogieArgString);
-            var boogieOutFile = "boogie.txt";
-            using (var bFile = new StreamWriter(boogieOutFile))
+            var boogieOut = RunBoogieAnalysisExe(boogieExecutablePath, verificationArguementsAsString);
+            var boogieOutFile = "verificationOutcome.txt";
+
+            using (var verificationFile = new StreamWriter(boogieOutFile))
             {
-                bFile.Write(boogieOut);
+                verificationFile.Write(boogieOut);
             }
             // Console.WriteLine($"\tFinished Boogie, output in {boogieOutFile}....\n");
 
             // compare Corral output against expected output
-            if (CompareBoogieOutput(boogieOut))
+            if (ExpectedOutput(boogieOut))
             {
                 Console.WriteLine($"Validation/Verification has proved [successful].");
                 Console.WriteLine($"\n -- Proof located in Sol Contract.");
@@ -139,16 +141,15 @@ namespace OverSightHandler
         /**
          * Runs solidity conversion function
          */
-        private bool RunSolidityToBoogieConversion()
+        private bool runSolidityToBoogieConversion()
         {
             Console.WriteLine("Starting Solidity Compiler.");
 
             // compile the program
-
-            Console.WriteLine($"Running Compiler on {ContractName}.");
+            Console.WriteLine($"Running Compiler on {contractName}.");
 
             SolidityCompiler compiler = new SolidityCompiler();
-            CompilerOutput compilerOutput = compiler.Compile(SolidityCompilerPath, SolidityFilePath);
+            CompilerOutput compilerOutput = compiler.Compile(solidityCompilerPath, solidityFilePath);
 
             if (compilerOutput.ContainsError())
             {
@@ -157,7 +158,7 @@ namespace OverSightHandler
             }
 
             // build the Solidity AST from solc output
-            AST solidityAST = new AST(compilerOutput, Path.GetDirectoryName(SolidityFilePath));
+            AST solidityAST = new AST(compilerOutput, Path.GetDirectoryName(solidityFilePath));
 
             // translate Solidity to Boogie
             try
@@ -170,7 +171,7 @@ namespace OverSightHandler
                 BoogieAST boogieAST = translator.Translate(solidityAST, ignoreMethods, translatorFlags);
 
                 // dump the Boogie program to a file
-                var outFilePath = Path.Combine(SolidityFileDir, outFileName);
+                var outFilePath = Path.Combine(solidityFileDir, outFileName);
                 using (var outWriter = new StreamWriter(outFileName))
                 {
                     outWriter.WriteLine(boogieAST.GetRoot());
@@ -184,39 +185,56 @@ namespace OverSightHandler
             return true;
         }
 
-        private string RunBinary(string cmdName, string arguments)
+        private string RunBoogieAnalysisExe(string cmdName, string arguments)
         {
-            // 
-            Process p = new Process();
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardInput = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.RedirectStandardError = true;
-            p.StartInfo.CreateNoWindow = true;
-            p.StartInfo.FileName = cmdName;
-            p.StartInfo.Arguments = $"{arguments}";
-            p.Start();
+            //Should not remain empty
+            string outputBinary = "";
+            string errorMessage = "";
 
-            string outputBinary = p.StandardOutput.ReadToEnd();
-            string errorMsg = p.StandardError.ReadToEnd();
-            if (!String.IsNullOrEmpty(errorMsg))
+            Process process = new Process();
+
+            try
             {
-                Console.WriteLine($"Error: {errorMsg}");
-            }
-            p.StandardOutput.Close();
-            p.StandardError.Close();
+                // Creates binary                 
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardInput = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.FileName = cmdName;
+                process.StartInfo.Arguments = $"{arguments}";
+                process.Start();
 
+                outputBinary = process.StandardOutput.ReadToEnd();
+                errorMessage = process.StandardError.ReadToEnd();
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    Console.WriteLine($"Error: {errorMessage}");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+            }
+            finally
+            {
+                process.StandardOutput.Close();
+                process.StandardError.Close();
+
+            }
             return outputBinary;
         }
 
 
-        private bool CompareBoogieOutput(string actual)
+        private bool ExpectedOutput(string actual)
         {
             if (actual == null)
             {
                 return false;
             }
-            // Boogie program verifier finished with x verified, 0 errors
+
+            // Boogie program verifier finished with x number of variables verified, x errors (if unsuccessful)
             if (actual.Contains("Boogie program verifier finished with ") &&
                 actual.Contains(" verified, 0 errors"))
             {

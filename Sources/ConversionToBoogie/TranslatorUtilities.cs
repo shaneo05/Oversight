@@ -1,6 +1,6 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System;
     using System.Collections.Generic;
@@ -9,8 +9,8 @@ namespace SolToBoogie
     using System.Numerics;
     using System.Text;
     using System.Text.RegularExpressions;
-    using BoogieAST;
-    using SolidityAST;
+    using Boogie_Syntax_Tree;
+    using Sol_Syntax_Tree;
 
     public static class Extensions
     {

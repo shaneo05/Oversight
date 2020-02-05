@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
-    using BoogieAST;
+    using Boogie_Syntax_Tree;
     
     public class ModularAnalysis
     {

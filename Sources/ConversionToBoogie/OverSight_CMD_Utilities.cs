@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     /// <summary>
     /// Class dedicated for helping parse command line arguements.

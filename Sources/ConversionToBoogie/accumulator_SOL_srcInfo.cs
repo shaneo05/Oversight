@@ -1,10 +1,10 @@
 ﻿
 
-namespace SolToBoogie
+namespace ConversionToBoogie
 {
     using System.IO;
     using System.Collections.Generic;
-    using SolidityAST;
+    using Sol_Syntax_Tree;
 
     public class accumulator_SOL_srcInfo : Generic_Syntax_Tree_Visitor
     {
