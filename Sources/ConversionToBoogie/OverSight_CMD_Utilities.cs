@@ -2,9 +2,9 @@
 
 namespace ConversionToBoogie
 {
-    /// <summary>
-    /// Class dedicated for helping parse command line arguements.
-    /// </summary>
+    /* 
+     * Class dedicated for helping parse command line arguements.
+     */
     public static class OverSight_CMD_Utilities
     {
         // TODO: extract into a VerificationFlags structure 
@@ -13,7 +13,6 @@ namespace ConversionToBoogie
                                                 out string entryPointContractName)
         {
             solidityFile = args[0];
-            // Debug.Assert(!solidityFile.Contains("/"), $"Illegal solidity file name {solidityFile}"); //the file name can be foo/bar/baz.sol
             entryPointContractName = args[1];
             Debug.Assert(!entryPointContractName.Contains("/"), $"Illegal contract name {entryPointContractName}");
         }
