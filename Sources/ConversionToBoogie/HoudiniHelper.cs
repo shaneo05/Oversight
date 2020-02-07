@@ -32,9 +32,11 @@ namespace ConversionToBoogie
             int id = 0;
 
             // equaility and disequality to null
-            foreach (VariableDeclaration addressVar in addressVariables)
+            for (int index = 0; index < addressVariables.Count; index++)
             {
-                BoogieExpr lhs = GetBoogieExprOfStateVar(addressVar, context);
+                VariableDeclaration address = addressVariables[index];
+
+                BoogieExpr lhs = GetBoogieExprOfStateVar(address, context);
                 BoogieExpr rhs = new BoogieIdentifierExpr("null");
                 BoogieExpr equality = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.EQ, lhs, rhs);
                 ret[++id] = equality;
@@ -65,16 +67,6 @@ namespace ConversionToBoogie
             string name = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
             BoogieMapSelect mapSelect = new BoogieMapSelect(new BoogieIdentifierExpr(name), new BoogieIdentifierExpr("this"));
             return mapSelect;
-        }
-
-        private static void PrintHoudiniCandidateMap(Dictionary<int, BoogieExpr> map)
-        {
-            Console.WriteLine("Houdini Candidates:");
-            foreach (int key in map.Keys)
-            {
-                Console.WriteLine($"{key} --> {map[key]}");
-            }
-            Console.WriteLine();
         }
     }
 }

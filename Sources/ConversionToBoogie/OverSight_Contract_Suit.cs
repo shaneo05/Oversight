@@ -10,30 +10,36 @@ namespace ConversionToBoogie
     /**
      * Generate harness for each contract
      */
-    public class OverSight_ContractHarness
+    public class OverSight_Contract_Suit
     {
-        private TranslatorContext context;
+        private TranslatorContext classTranslatorContext;
         private Dictionary<string, List<BoogieExpr>> contractInvariants;
 
-        public OverSight_ContractHarness(TranslatorContext context, Dictionary<string, List<BoogieExpr>> _contractInvariants)
+        public void setTranslatorContext(TranslatorContext translatorContext)
         {
-            this.context = context;
-            this.contractInvariants = _contractInvariants;
+            this.classTranslatorContext = translatorContext;
         }
 
-        public void Generate()
+        public void setContractInvariants(Dictionary<string, List<BoogieExpr>> givenInvariants)
         {
-            foreach (ContractDefinition contract in context.ContractDefinitions)
-            { 
+            this.contractInvariants = givenInvariants;
+        }
 
-                Dictionary<int, BoogieExpr> houdiniVarMap = HoudiniHelper.GenerateHoudiniVarMapping(contract, context);
-                GenerateHoudiniVarsForContract(contract, houdiniVarMap);
-                GenerateBoogieHarnessForContract(contract, houdiniVarMap);
+        /**
+         * Creates harness for contract translated to boogie.
+         */
+        public void createHarness()
+        {
+            foreach (ContractDefinition contract in classTranslatorContext.ContractDefinitions)
+            {
+                Dictionary<int, BoogieExpr> houdiniVariableMap = HoudiniHelper.GenerateHoudiniVarMapping(contract, classTranslatorContext);
+                GenerateHoudiniVarsForContract(contract, houdiniVariableMap);
+                createContractBoogieHarness(contract, houdiniVariableMap);
             }
 
-            GenerateModifiers();
+            createModificationProperties();
 
-            foreach (ContractDefinition contract in context.ContractDefinitions)
+            foreach (ContractDefinition contract in classTranslatorContext.ContractDefinitions)
             {
                 GenerateCorralChoiceProcForContract(contract);
                 GenerateCorralHarnessForContract(contract);
@@ -50,47 +56,47 @@ namespace ConversionToBoogie
                 {
                     new BoogieAttribute("existential", true)
                 };
-                context.Program.AddDeclaration(houdiniVar);
+                classTranslatorContext.Program.AddDeclaration(houdiniVar);
             }
         }
 
-        private void GenerateModifiers()
+        private void createModificationProperties()
         {
-            foreach (string modifier in context.ModifierToBoogiePreProc.Keys)
+            foreach (string modifier in classTranslatorContext.ModifierToBoogiePreProc.Keys)
             {
-                if (context.ModifierToBoogiePreImpl.ContainsKey(modifier))
+                if (classTranslatorContext.ModifierToBoogiePreImpl.ContainsKey(modifier))
                 {
-                    context.Program.AddDeclaration(context.ModifierToBoogiePreProc[modifier]);
-                    context.Program.AddDeclaration(context.ModifierToBoogiePreImpl[modifier]);
+                    classTranslatorContext.Program.AddDeclaration(classTranslatorContext.ModifierToBoogiePreProc[modifier]);
+                    classTranslatorContext.Program.AddDeclaration(classTranslatorContext.ModifierToBoogiePreImpl[modifier]);
                 }
             }
 
-            foreach (string modifier in context.ModifierToBoogiePostProc.Keys)
+            foreach (string modifier in classTranslatorContext.ModifierToBoogiePostProc.Keys)
             {
-                if (context.ModifierToBoogiePostImpl.ContainsKey(modifier))
+                if (classTranslatorContext.ModifierToBoogiePostImpl.ContainsKey(modifier))
                 {
-                    context.Program.AddDeclaration(context.ModifierToBoogiePostProc[modifier]);
-                    context.Program.AddDeclaration(context.ModifierToBoogiePostImpl[modifier]);
+                    classTranslatorContext.Program.AddDeclaration(classTranslatorContext.ModifierToBoogiePostProc[modifier]);
+                    classTranslatorContext.Program.AddDeclaration(classTranslatorContext.ModifierToBoogiePostImpl[modifier]);
                 }
             }
         }
 
-        private void GenerateBoogieHarnessForContract(ContractDefinition contract, Dictionary<int, BoogieExpr> houdiniVarMap)
+        private void createContractBoogieHarness(ContractDefinition contract, Dictionary<int, BoogieExpr> houdiniVarMap)
         {
             string harnessName = "BoogieEntry_" + contract.Name;
             List<BoogieVariable> inParams = new List<BoogieVariable>();
             List<BoogieVariable> outParams = new List<BoogieVariable>();
             BoogieProcedure harness = new BoogieProcedure(harnessName, inParams, outParams);
-            context.Program.AddDeclaration(harness);
+            classTranslatorContext.Program.AddDeclaration(harness);
 
-            List<BoogieVariable> localVars = TranslatorUtilities.CollectLocalVars(new List<ContractDefinition>() { contract }, context);
+            List<BoogieVariable> localVars = TranslatorUtilities.CollectLocalVars(new List<ContractDefinition>() { contract }, classTranslatorContext);
             BoogieStmtList harnessBody = new BoogieStmtList();
             harnessBody.AddStatement(GenerateDynamicTypeAssumes(contract));
             GenerateConstructorCall(contract).ForEach(x => harnessBody.AddStatement(x));
-            if (context.TranslateFlags.ModelReverts)
+            if (classTranslatorContext.TranslateFlags.ModelReverts)
             {
                 BoogieExpr assumePred = new BoogieUnaryOperation(BoogieUnaryOperation.Opcode.NOT, new BoogieIdentifierExpr("revert"));
-                if (context.TranslateFlags.InstrumentGas)
+                if (classTranslatorContext.TranslateFlags.InstrumentGas)
                 {
                     assumePred = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.AND, assumePred, new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.GE, new BoogieIdentifierExpr("gas"), new BoogieLiteralExpr(0)));    
                 }
@@ -99,14 +105,14 @@ namespace ConversionToBoogie
             }
             harnessBody.AddStatement(GenerateWhileLoop(contract, houdiniVarMap, localVars));
             BoogieImplementation harnessImpl = new BoogieImplementation(harnessName, inParams, outParams, localVars, harnessBody);
-            context.Program.AddDeclaration(harnessImpl);
+            classTranslatorContext.Program.AddDeclaration(harnessImpl);
         }
 
         private BoogieAssumeCmd GenerateDynamicTypeAssumes(ContractDefinition contract)
         {
             BoogieExpr assumeLhs = new BoogieMapSelect(new BoogieIdentifierExpr("DType"), new BoogieIdentifierExpr("this"));
 
-            List<ContractDefinition> subtypes = new List<ContractDefinition>(context.GetSubTypesOfContract(contract));
+            List<ContractDefinition> subtypes = new List<ContractDefinition>(classTranslatorContext.GetSubTypesOfContract(contract));
             Debug.Assert(subtypes.Count > 0);
 
             BoogieExpr assumeExpr = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.EQ, assumeLhs,
@@ -132,12 +138,12 @@ namespace ConversionToBoogie
                 new BoogieIdentifierExpr("msgsender_MSG"),
                 new BoogieIdentifierExpr("msgvalue_MSG"),
             };
-            if (context.IsConstructorDefined(contract))
+            if (classTranslatorContext.IsConstructorDefined(contract))
             {
-                FunctionDefinition ctor = context.GetConstructorByContract(contract);
+                FunctionDefinition ctor = classTranslatorContext.GetConstructorByContract(contract);
                 foreach (VariableDeclaration param in ctor.Parameters.Parameters)
                 {
-                    string name = TranslatorUtilities.GetCanonicalLocalVariableName(param, context);
+                    string name = TranslatorUtilities.GetCanonicalLocalVariableName(param, classTranslatorContext);
                     inputs.Add(new BoogieIdentifierExpr(name));
 
                     if (param.TypeName is ArrayTypeName array)
@@ -149,7 +155,7 @@ namespace ConversionToBoogie
                 }
             }
 
-            if (context.TranslateFlags.InstrumentGas)
+            if (classTranslatorContext.TranslateFlags.InstrumentGas)
             {
                 TranslatorUtilities.havocGas(localStmtList);
             }
@@ -164,7 +170,7 @@ namespace ConversionToBoogie
             BoogieStmtList body = GenerateHavocBlock(contract, localVars);
 
             // generate the choice block
-            body.AddStatement(TranslatorUtilities.GenerateChoiceBlock(new List<ContractDefinition>() { contract }, context));
+            body.AddStatement(TranslatorUtilities.GenerateChoiceBlock(new List<ContractDefinition>() { contract }, classTranslatorContext));
 
             // generate candidate invariants for Houdini
             List<BoogiePredicateCmd> candidateInvs = new List<BoogiePredicateCmd>();
@@ -215,13 +221,13 @@ namespace ConversionToBoogie
             };
             List<BoogieVariable> outParams = new List<BoogieVariable>();
             BoogieProcedure harness = new BoogieProcedure(procName, inParams, outParams);
-            context.Program.AddDeclaration(harness);
+            classTranslatorContext.Program.AddDeclaration(harness);
 
-            List<BoogieVariable> localVars = RemoveThisFromVariables(TranslatorUtilities.CollectLocalVars(new List<ContractDefinition>() { contract }, context));
+            List<BoogieVariable> localVars = RemoveThisFromVariables(TranslatorUtilities.CollectLocalVars(new List<ContractDefinition>() { contract }, classTranslatorContext));
             BoogieStmtList procBody = GenerateHavocBlock(contract, localVars);
-            procBody.AddStatement(TranslatorUtilities.GenerateChoiceBlock(new List<ContractDefinition>() { contract }, context));
+            procBody.AddStatement(TranslatorUtilities.GenerateChoiceBlock(new List<ContractDefinition>() { contract }, classTranslatorContext));
             BoogieImplementation procImpl = new BoogieImplementation(procName, inParams, outParams, localVars, procBody);
-            context.Program.AddDeclaration(procImpl);
+            classTranslatorContext.Program.AddDeclaration(procImpl);
         }
 
         private void GenerateCorralHarnessForContract(ContractDefinition contract)
@@ -230,7 +236,7 @@ namespace ConversionToBoogie
             List<BoogieVariable> inParams = new List<BoogieVariable>();
             List<BoogieVariable> outParams = new List<BoogieVariable>();
             BoogieProcedure harness = new BoogieProcedure(harnessName, inParams, outParams);
-            context.Program.AddDeclaration(harness);
+            classTranslatorContext.Program.AddDeclaration(harness);
 
             List<BoogieVariable> localVars = new List<BoogieVariable>
             {
@@ -238,18 +244,18 @@ namespace ConversionToBoogie
                 new BoogieLocalVariable(new BoogieTypedIdent("msgsender_MSG", BoogieType.Ref)),
                 new BoogieLocalVariable(new BoogieTypedIdent("msgvalue_MSG", BoogieType.Int)),
             };
-            if (context.IsConstructorDefined(contract))
+            if (classTranslatorContext.IsConstructorDefined(contract))
             {
-                FunctionDefinition ctor = context.GetConstructorByContract(contract);
+                FunctionDefinition ctor = classTranslatorContext.GetConstructorByContract(contract);
                 localVars.AddRange(GetParamsOfFunction(ctor));
             }
             BoogieStmtList harnessBody = new BoogieStmtList();
             harnessBody.AddStatement(GenerateDynamicTypeAssumes(contract));
             GenerateConstructorCall(contract).ForEach(x => harnessBody.AddStatement(x));
-            if (context.TranslateFlags.ModelReverts)
+            if (classTranslatorContext.TranslateFlags.ModelReverts)
             {
                 BoogieExpr assumePred = new BoogieUnaryOperation(BoogieUnaryOperation.Opcode.NOT, new BoogieIdentifierExpr("revert"));
-                if (context.TranslateFlags.InstrumentGas)
+                if (classTranslatorContext.TranslateFlags.InstrumentGas)
                 {
                     assumePred = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.AND, assumePred, new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.GE, new BoogieIdentifierExpr("gas"), new BoogieLiteralExpr(0)));    
                 }
@@ -258,7 +264,7 @@ namespace ConversionToBoogie
             }
             harnessBody.AddStatement(GenerateCorralWhileLoop(contract));
             BoogieImplementation harnessImpl = new BoogieImplementation(harnessName, inParams, outParams, localVars, harnessBody);
-            context.Program.AddDeclaration(harnessImpl);
+            classTranslatorContext.Program.AddDeclaration(harnessImpl);
         }
 
         private BoogieWhileCmd GenerateCorralWhileLoop(ContractDefinition contract)
@@ -304,7 +310,7 @@ namespace ConversionToBoogie
                 string name = $"__arg1_{inpParamCount++}_" + funcDef.Name;
                 if (!string.IsNullOrEmpty(param.Name))
                 {
-                    name = TranslatorUtilities.GetCanonicalLocalVariableName(param, context);
+                    name = TranslatorUtilities.GetCanonicalLocalVariableName(param, classTranslatorContext);
                 }
                 BoogieType type = TranslatorUtilities.GetBoogieTypeFromSolidityTypeName(param.TypeName);
                 BoogieVariable localVar = new BoogieLocalVariable(new BoogieTypedIdent(name, type));
@@ -318,7 +324,7 @@ namespace ConversionToBoogie
 
                 if (!string.IsNullOrEmpty(param.Name))
                 {
-                    name = TranslatorUtilities.GetCanonicalLocalVariableName(param, context);
+                    name = TranslatorUtilities.GetCanonicalLocalVariableName(param, classTranslatorContext);
                 }
                 BoogieType type = TranslatorUtilities.GetBoogieTypeFromSolidityTypeName(param.TypeName);
                 BoogieVariable localVar = new BoogieLocalVariable(new BoogieTypedIdent(name, type));

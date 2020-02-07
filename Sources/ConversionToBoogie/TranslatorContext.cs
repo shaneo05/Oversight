@@ -163,7 +163,7 @@ namespace ConversionToBoogie
             return ASTNodeToSourceLineNumberMap[node];
         }
 
-        public HashSet<FunctionDefinition> GetFuncDefintionsInContract(ContractDefinition contract)
+        public HashSet<FunctionDefinition> retrieveFunctionDefinitions(ContractDefinition contract)
         {
             if (ContractToFunctionsMap.ContainsKey(contract))
             {

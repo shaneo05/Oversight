@@ -1,95 +1,76 @@
-﻿
-
-namespace ConversionToBoogie
+﻿namespace ConversionToBoogie
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
+
     using Sol_Syntax_Tree;
+    using System.Collections.Generic;
 
     /**
      * Determine the visible functions/events for each contract considering
      * the inheritance hierarchy, and put the information in the context.
      */
-    public class OverSight_Event_Resolver
+    class OverSight_Event_Resolver
     {
         // require the ContractDefinitions member is populated
         // require the ContractToFunctionsMap member is populated
-        private TranslatorContext context;
+        private TranslatorContext classTranslatorContext;
 
-        public OverSight_Event_Resolver(TranslatorContext context)
+        public void setTranslatorContext(TranslatorContext givenContext)
         {
-            this.context = context;
+            this.classTranslatorContext = givenContext;
         }
 
-        // TODO: resolve events
-        public void Resolve()
+        public void filterFunctions()
         {
-            ResolveFunctions();
-            ComputeVisibleFunctions();
-        }
-
-        private void ResolveFunctions()
-        {
-            OverSight_GenericResolver resolutionHelper = new OverSight_GenericResolver(context);
-            List<ContractDefinition> sortedContracts = resolutionHelper.TopologicalSortByDependency(context.ContractDefinitions);
+            OverSight_GenericResolver resolutionHelper = new OverSight_GenericResolver(classTranslatorContext);
+            List<ContractDefinition> sortedContracts = resolutionHelper.TopologicalSortByDependency(classTranslatorContext.ContractDefinitions);
 
             foreach (ContractDefinition contract in sortedContracts)
             {
                 // create a deep copy
-                List<int> linearizedBaseContractIds = new List<int>(contract.LinearizedBaseContracts);
-                linearizedBaseContractIds.Reverse();
+                List<int> baseContracts = new List<int>(contract.LinearizedBaseContracts);
 
-                foreach (int id in linearizedBaseContractIds)
+                if (baseContracts != null)
                 {
-                    ContractDefinition baseContract = context.GetASTNodeById(id) as ContractDefinition;
-                    Debug.Assert(baseContract != null);
+                    baseContracts.Reverse();
+                }
 
-                    if (baseContract == contract)
-                    {
-                        HashSet<FunctionDefinition> functions = context.GetFuncDefintionsInContract(contract);
-                        foreach (FunctionDefinition function in functions)
+                foreach (int index in baseContracts)
+                {
+                    ContractDefinition baseContract = classTranslatorContext.GetASTNodeById(index) as ContractDefinition;
+                    if (baseContract != null)
+                    { 
+                        //if baseContract and contract are equal 
+                        HashSet<FunctionDefinition> totalFunctions = classTranslatorContext.retrieveFunctionDefinitions(baseContract);
+                        foreach (FunctionDefinition function in totalFunctions)
                         {
                             string signature = TranslatorUtilities.ComputeFunctionSignature(function);
-                            context.AddFunctionToDynamicType(signature, contract, function);
+                            if (classTranslatorContext != null)
+                                classTranslatorContext.AddFunctionToDynamicType(signature, contract, function);
+                        }
+
+                        if (baseContract == contract)
+                        { 
+                            HashSet<EventDefinition> totalEvents = classTranslatorContext.GetEventDefintionsInContract(baseContract);
+                            foreach (var singularity in totalEvents)
+                            {
+                                if (classTranslatorContext != null)
+                                    classTranslatorContext.AddEventToContract(contract, singularity);
+                            }
+                        }
+
+                        //Compute Visible functions in existing function declaration
+                        foreach (string funcSig in classTranslatorContext.FuncSigResolutionMap.Keys)
+                        {
+                            foreach (ContractDefinition tempContract in classTranslatorContext.FuncSigResolutionMap[funcSig].Keys)
+                            {
+                                FunctionDefinition funcDef = classTranslatorContext.FuncSigResolutionMap[funcSig][tempContract];
+                                classTranslatorContext.AddVisibleFunctionToContract(funcDef, tempContract);
+                            }
                         }
                     }
-                    else
-                    {
-                        HashSet<FunctionDefinition> functions = context.GetFuncDefintionsInContract(baseContract);
-                        foreach (FunctionDefinition function in functions)
-                        {
-                            if (function.Visibility == EnumVisibility.PRIVATE) continue;
 
-                            string signature = TranslatorUtilities.ComputeFunctionSignature(function);
-                            context.AddFunctionToDynamicType(signature, contract, function);
-                        }
-                        // Events
-                        // TODO: Do we need to lookup by signature?
-                        HashSet<EventDefinition> events = context.GetEventDefintionsInContract(baseContract);
-                        foreach (var evt in events)
-                        {
-                            context.AddEventToContract(contract, evt);
-                        }
-                    }
                 }
             }
-
-            // PrintFunctionResolutionMap();
-        }
-
-        private void ComputeVisibleFunctions()
-        {
-            foreach (string funcSig in context.FuncSigResolutionMap.Keys)
-            {
-                foreach (ContractDefinition contract in context.FuncSigResolutionMap[funcSig].Keys)
-                {
-                    FunctionDefinition funcDef = context.FuncSigResolutionMap[funcSig][contract];
-                    context.AddVisibleFunctionToContract(funcDef, contract);
-                }
-            }
-
-            // PrintVisibleFunctions();
         }
     }
 }

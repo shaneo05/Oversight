@@ -57,11 +57,15 @@ namespace ConversionToBoogie
 
             
             // generate harness for each contract
-            // failure to add this, will r
+            // failure to add this, will result verification failure 
             if (!context.TranslateFlags.NoHarness)
             {
-                OverSight_ContractHarness harnessGenerator = new OverSight_ContractHarness(context, this.procedureTranslator.ContractInvariants);
-                harnessGenerator.Generate();
+                OverSight_Contract_Suit harnessGenerator = new OverSight_Contract_Suit();
+                harnessGenerator.setTranslatorContext(context);
+                harnessGenerator.setContractInvariants(this.procedureTranslator.ContractInvariants);
+
+      
+                harnessGenerator.createHarness();
             }
             
 
@@ -137,8 +141,10 @@ namespace ConversionToBoogie
     private void executeFunctionEventResolver()
     {
         // resolve function and event definitions and determine the actual definition for a dynamic type
-        OverSight_Event_Resolver functionEventResolver = new OverSight_Event_Resolver(classTranslatorContext);
-        functionEventResolver.Resolve();
+        OverSight_Event_Resolver functionEventResolver = new OverSight_Event_Resolver();
+            functionEventResolver.setTranslatorContext(classTranslatorContext);
+            functionEventResolver.filterFunctions();
+            
     }
 
     private void executeAxiomGenerator()

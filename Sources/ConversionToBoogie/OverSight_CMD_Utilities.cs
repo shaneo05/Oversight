@@ -10,11 +10,11 @@ namespace ConversionToBoogie
         // TODO: extract into a VerificationFlags structure 
         public static void ParseCommandLineArgs(string[] args,
                                                 out string solidityFile,
-                                                out string entryPointContractName)
+                                                out string nameOfContract)
         {
             solidityFile = args[0];
-            entryPointContractName = args[1];
-            Debug.Assert(!entryPointContractName.Contains("/"), $"Illegal contract name {entryPointContractName}");
+            nameOfContract = args[1];
+            Debug.Assert(!nameOfContract.Contains("/"), $"Illegal contract name {nameOfContract}");
         }
     }
 }
