@@ -8,10 +8,9 @@ namespace ConversionToBoogie
     
     public class ModularAnalysis
     {
-        private TranslatorContext context;
+        private readonly TranslatorContext context;
         readonly Dictionary<string, HashSet<BoogieGlobalVariable>> modSets = new Dictionary<string, HashSet<BoogieGlobalVariable>>();
-        
-        Dictionary<string, List<BoogieCmd>> flattenedCmdLists = new Dictionary<string, List<BoogieCmd>>();
+        readonly Dictionary<string, List<BoogieCmd>> flattenedCmdLists = new Dictionary<string, List<BoogieCmd>>();
 
         public ModularAnalysis(TranslatorContext context)
         {

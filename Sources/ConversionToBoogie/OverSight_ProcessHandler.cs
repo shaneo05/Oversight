@@ -13,10 +13,10 @@ namespace ConversionToBoogie
 
     public class OverSight_ProcessHandler : Generic_Syntax_Tree_Visitor
     {
-        private TranslatorContext context;
+        private readonly TranslatorContext context;
 
         // used to declare local vars in a Boogie implementation
-        private Dictionary<string, List<BoogieVariable>> boogieToLocalVarsMap;
+        private readonly Dictionary<string, List<BoogieVariable>> boogieToLocalVarsMap;
 
         // current Boogie procedure being translated to
         private string currentBoogieProc = null;
@@ -34,10 +34,10 @@ namespace ConversionToBoogie
         private BoogieStmtList currentPostlude = null;
 
         // to generate inline attributes 
-        private bool genInlineAttrsInBpl;
+        private readonly bool genInlineAttrsInBpl;
 
         // to collect contract invariants
-        private Dictionary<string, List<BoogieExpr>> contractInvariants = null;
+        private readonly Dictionary<string, List<BoogieExpr>> contractInvariants = null;
 
         private static void emitGasCheck(BoogieStmtList newBody)
         {
@@ -173,23 +173,29 @@ namespace ConversionToBoogie
             {
                 // Skipping dynamic and static array types:
                 var callCmd = new BoogieCallCmd("boogie_si_record_sol2Bpl_ref", new List<BoogieExpr>() { value }, new List<BoogieIdentifierExpr>());
-                callCmd.Attributes = new List<BoogieAttribute>();
-                callCmd.Attributes.Add(new BoogieAttribute("cexpr", $"\"{name}\""));
+                callCmd.Attributes = new List<BoogieAttribute>
+                {
+                    new BoogieAttribute("cexpr", $"\"{name}\"")
+                };
                 return callCmd;
             }
             else if (type.IsInt() || type.IsUint() || type.IsString() || type.IsBytes())
                 // TypeString.StartsWith("uint") || type.TypeString.StartsWith("int") || type.TypeString.StartsWith("string ") || type.TypeString.StartsWith("bytes"))
             {
                 var callCmd = new BoogieCallCmd("boogie_si_record_sol2Bpl_int", new List<BoogieExpr>() { value }, new List<BoogieIdentifierExpr>());
-                callCmd.Attributes = new List<BoogieAttribute>();
-                callCmd.Attributes.Add(new BoogieAttribute("cexpr", $"\"{name}\""));
+                callCmd.Attributes = new List<BoogieAttribute>
+                {
+                    new BoogieAttribute("cexpr", $"\"{name}\"")
+                };
                 return callCmd;
             }
             else if (type.IsBool())
             {
                 var callCmd = new BoogieCallCmd("boogie_si_record_sol2Bpl_bool", new List<BoogieExpr>() { value }, new List<BoogieIdentifierExpr>());
-                callCmd.Attributes = new List<BoogieAttribute>();
-                callCmd.Attributes.Add(new BoogieAttribute("cexpr", $"\"{name}\""));
+                callCmd.Attributes = new List<BoogieAttribute>
+                {
+                    new BoogieAttribute("cexpr", $"\"{name}\"")
+                };
                 return callCmd;
             }
 
@@ -248,7 +254,7 @@ namespace ConversionToBoogie
                 
             foreach (VariableDeclaration param in node.Parameters.Parameters)
             {
-                var parType = param.TypeDescriptions != null ? param.TypeDescriptions : null;
+                var parType = param.TypeDescriptions ?? null;
                 int parIndex = node.Parameters.Parameters.IndexOf(param);
                 BoogieVariable parVar = inParams[parIndex + 3];
                 string parName = param.Name;
@@ -417,8 +423,7 @@ namespace ConversionToBoogie
                 }
 
                 // is it a OverSight Contract Invariant function?
-                List<BoogieExpr> contractInvs = null;
-                if (IsOverSightContractInvariantFunction(node, procBody, out contractInvs))
+                if (IsOverSightContractInvariantFunction(node, procBody, out List<BoogieExpr> contractInvs))
                 {
                     //add contract invs as loop invariants to outer loop
                     OverSightAssert(!contractInvariants.ContainsKey(currentContract.Name), $"More than one function defining the contract invariant for contract {currentContract.Name}");
@@ -427,10 +432,9 @@ namespace ConversionToBoogie
                 else
                 {
                     //extract the specifications from within the body
-                    BoogieStmtList procBodyWoRequires, procBodyWoEnsures, procBodyWoModifies;
-                    var preconditions = ExtractSpecifications("Requires_OverSight", procBody, out procBodyWoRequires);
-                    var postconditions = ExtractSpecifications("Ensures_OverSight", procBodyWoRequires, out procBodyWoEnsures);
-                    var modifies = ExtractSpecifications("Modifies_OverSight", procBodyWoEnsures, out procBodyWoModifies);
+                    var preconditions = ExtractSpecifications("Requires_OverSight", procBody, out BoogieStmtList procBodyWoRequires);
+                    var postconditions = ExtractSpecifications("Ensures_OverSight", procBodyWoRequires, out BoogieStmtList procBodyWoEnsures);
+                    var modifies = ExtractSpecifications("Modifies_OverSight", procBodyWoEnsures, out BoogieStmtList procBodyWoModifies);
 
                     procedure.AddPreConditions(preconditions);
                     procedure.AddPostConditions(postconditions);
@@ -601,9 +605,7 @@ namespace ConversionToBoogie
             {
                 currentStmtList.AddStatement(new BoogieCommentCmd($"Initialize address/contract mapping {varDecl.Name}"));
 
-                BoogieType mapKeyType;
-                BoogieMapSelect lhs;
-                GetBoogieTypesFromMapping(varDecl, mapping, out mapKeyType, out lhs);
+                GetBoogieTypesFromMapping(varDecl, mapping, out BoogieType mapKeyType, out BoogieMapSelect lhs);
                 var qVar = QVarGenerator.NewQVar(0, 0);
                 BoogieExpr zeroExpr = new BoogieIdentifierExpr("null");
 
@@ -1408,10 +1410,7 @@ namespace ConversionToBoogie
                 currentStmtList.AppendStmtList(stmtList);
             }
 
-            var lhsType = node.LeftHandSide.TypeDescriptions != null ?
-                node.LeftHandSide.TypeDescriptions :
-                (node.RightHandSide.TypeDescriptions != null ?
-                    node.RightHandSide.TypeDescriptions : null);
+            var lhsType = node.LeftHandSide.TypeDescriptions ?? node.RightHandSide.TypeDescriptions ?? null;
 
             if (lhsType != null && !isTupleAssignment)
             {
@@ -1423,11 +1422,6 @@ namespace ConversionToBoogie
             }
 
             return false;
-        }
-
-        private void TranslateInBuiltFunction(FunctionCall funcCall, BoogieExpr lhs)
-        {
-            throw new NotImplementedException();
         }
 
         private void TranslateFunctionCalls(FunctionCall funcCall, List<BoogieIdentifierExpr> outParams)
@@ -1784,8 +1778,10 @@ namespace ConversionToBoogie
                     if (!context.TranslateFlags.NoDataValuesInfoFlag)
                     {
                         var callCmd = new BoogieCallCmd("boogie_si_record_sol2Bpl_int", new List<BoogieExpr>() { lhs }, new List<BoogieIdentifierExpr>());
-                        callCmd.Attributes = new List<BoogieAttribute>();
-                        callCmd.Attributes.Add(new BoogieAttribute("cexpr", $"\"{unaryOperation.SubExpression.ToString()}\""));
+                        callCmd.Attributes = new List<BoogieAttribute>
+                        {
+                            new BoogieAttribute("cexpr", $"\"{unaryOperation.SubExpression.ToString()}\"")
+                        };
                         currentStmtList.AddStatement(callCmd);
                     }
                     AddAssumeForUints(unaryOperation, lhs, unaryOperation.TypeDescriptions);
@@ -2646,13 +2642,6 @@ namespace ConversionToBoogie
         }
         #endregion
 
-        private void AddUnsignedTypeAssumeCmd(BoogieIdentifierExpr v)
-        {
-            var predicate = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.GE, v, new BoogieLiteralExpr(0));
-            BoogieAssumeCmd assumeCmd = new BoogieAssumeCmd(predicate);
-            currentStmtList.AddStatement(assumeCmd);
-        }
-
         private bool IsExternalFunctionCall(FunctionCall node)
         {
             if (node.Expression is MemberAccess memberAccess)
@@ -3151,8 +3140,10 @@ namespace ConversionToBoogie
                     if (!context.TranslateFlags.NoDataValuesInfoFlag)
                     {
                         var callCmd = new BoogieCallCmd("boogie_si_record_sol2Bpl_int", new List<BoogieExpr>() { expr }, new List<BoogieIdentifierExpr>());
-                        callCmd.Attributes = new List<BoogieAttribute>();
-                        callCmd.Attributes.Add(new BoogieAttribute("cexpr", $"\"{node.SubExpression.ToString()}\""));
+                        callCmd.Attributes = new List<BoogieAttribute>
+                        {
+                            new BoogieAttribute("cexpr", $"\"{node.SubExpression.ToString()}\"")
+                        };
                         currentStmtList.AddStatement(callCmd);
                     }
                     break;

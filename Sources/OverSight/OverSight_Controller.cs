@@ -18,26 +18,26 @@ namespace OverSightHandler
         //Class Variables
 
         //Loc of Solidity File Path
-        private string solidityFilePath;
+        private readonly string solidityFilePath;
         //Loc of Solidity File Directory
-        private string solidityFileDir;
+        private readonly string solidityFileDir;
 
         //Loc of Solidity Contract Name
-        private string contractName;
+        private readonly string contractName;
 
         //Location of Boogie Executable on runnable machine
-        private string boogieExecutablePath;
+        private readonly string boogieExecutablePath;
         //Location of Solidity Compiler on runnable machine
-        private string solidityCompilerPath;
+        private readonly string solidityCompilerPath;
 
         //Bool attempt proof value
-        private bool attemptProof;
+        private readonly bool attemptProof;
 
         //BPL file containing boogie output 
         private readonly string outFileName = "BoogieConversion.bpl";
 
-        private HashSet<Tuple<string, string>> ignoreMethods;
-        private TranslatorFlags translatorFlags;
+        private readonly HashSet<Tuple<string, string>> ignoreMethods;
+        private readonly TranslatorFlags translatorFlags;
 
         public OverSightController(string solidityFilePath, string contractName, HashSet<Tuple<string, string>> ignoreMethods,bool tryProofFlag, TranslatorFlags _translatorFlags = null)
         {

@@ -167,7 +167,7 @@ namespace ConversionToBoogie
         private BoogieWhileCmd GenerateWhileLoop(ContractDefinition contract, Dictionary<int, BoogieExpr> houdiniVarMap, List<BoogieVariable> localVars)
         {
             // havoc all local variables except `this'
-            BoogieStmtList body = GenerateHavocBlock(contract, localVars);
+            BoogieStmtList body = GenerateHavocBlock(localVars);
 
             // generate the choice block
             body.AddStatement(TranslatorUtilities.GenerateChoiceBlock(new List<ContractDefinition>() { contract }, classTranslatorContext));
@@ -192,7 +192,7 @@ namespace ConversionToBoogie
             return new BoogieWhileCmd(new BoogieLiteralExpr(true), body, candidateInvs);
         }
 
-        private BoogieStmtList GenerateHavocBlock(ContractDefinition contract, List<BoogieVariable> localVars)
+        private BoogieStmtList GenerateHavocBlock(List<BoogieVariable> localVars)
         {
             BoogieStmtList stmtList = new BoogieStmtList();
             foreach (BoogieVariable localVar in localVars)
@@ -224,7 +224,7 @@ namespace ConversionToBoogie
             classTranslatorContext.Program.AddDeclaration(harness);
 
             List<BoogieVariable> localVars = RemoveThisFromVariables(TranslatorUtilities.CollectLocalVars(new List<ContractDefinition>() { contract }, classTranslatorContext));
-            BoogieStmtList procBody = GenerateHavocBlock(contract, localVars);
+            BoogieStmtList procBody = GenerateHavocBlock(localVars);
             procBody.AddStatement(TranslatorUtilities.GenerateChoiceBlock(new List<ContractDefinition>() { contract }, classTranslatorContext));
             BoogieImplementation procImpl = new BoogieImplementation(procName, inParams, outParams, localVars, procBody);
             classTranslatorContext.Program.AddDeclaration(procImpl);

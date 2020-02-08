@@ -15,7 +15,7 @@ namespace ConversionToBoogie
         private SourceUnit currentSourceUnit;
 
         //from srcFile name to the int list of "\n" positions
-        private Dictionary<string, List<int>> DictLineBreaks = new Dictionary<string, List<int>>();
+        private readonly Dictionary<string, List<int>> DictLineBreaks = new Dictionary<string, List<int>>();
 
         public void setContext(TranslatorContext context)
         {

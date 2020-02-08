@@ -9,7 +9,7 @@ namespace ConversionToBoogie
     // desugar: add function names for constructors
     public class OverSight_Solidity_DeConstruction : Generic_Syntax_Tree_Visitor
     {
-        private TranslatorContext context;
+        private readonly TranslatorContext context;
 
         // current contract that the visitor is visiting
         private ContractDefinition currentContract;

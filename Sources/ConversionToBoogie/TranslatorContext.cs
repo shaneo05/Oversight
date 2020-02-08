@@ -91,10 +91,10 @@ namespace ConversionToBoogie
         private int freshIdentifierCount = 0;
 
         // methods whose translation has to be skipped
-        private HashSet<Tuple<string, string>> IgnoreMethods;
+        private readonly HashSet<Tuple<string, string>> IgnoreMethods;
 
         // do we generate inline attributes (required for unbounded verification)
-        private bool genInlineAttrInBpl;
+        private readonly bool genInlineAttrInBpl;
 
         // data structures for using
         // maps Contract C --> (source, dest), where source is a library type
@@ -358,7 +358,7 @@ namespace ConversionToBoogie
             FunctionToContractMap[funcDef] = contract;
         }
 
-        public bool HasFuncSigInContract(ContractDefinition contract, string signature)
+        public bool HasFuncSigInContract(ContractDefinition contract)
         {
             return ContractToFuncSigsMap.ContainsKey(contract);
         }
