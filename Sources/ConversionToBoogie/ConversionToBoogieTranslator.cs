@@ -46,7 +46,6 @@ namespace ConversionToBoogie
             executeModifierCollector();
             executeUsingCollector();
             executeProcedureTranslator();
-            executeFallBackGenerator();
 
             //This will be called by default during proof attempts.
             if (context.TranslateFlags.DoModSetAnalysis)
@@ -178,14 +177,6 @@ namespace ConversionToBoogie
         OverSight_ProcessHandler procTranslator = new OverSight_ProcessHandler(classTranslatorContext, generateInLineAttributes);
         sourceUnits.Accept(procTranslator);
         this.procedureTranslator = procTranslator;
-    }
-
-
-    private void executeFallBackGenerator()
-    {
-        // generate fallbacks
-        OverSight_FallBackHandler fallbackGenerator = new OverSight_FallBackHandler(classTranslatorContext);
-        fallbackGenerator.Generate();
     }
 }
 }
