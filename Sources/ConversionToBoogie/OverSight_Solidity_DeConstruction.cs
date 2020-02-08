@@ -205,14 +205,6 @@ namespace ConversionToBoogie
 
         public override bool Visit(FunctionCall node)
         {
-            //a function call may be of the form
-            // foo(x) | foo.value(y)(x) | foo.gas(z)(x) | foo.value(z).gas(y)(x) | foo.gas(x).value(y)(z)
-            // e.foo(x) | e.foo.value(y)(x) | e.foo.gas(z)(x) | e.foo.value(z).gas(y)(x) | e.foo.gas(x).value(y)(z)
-            // foo could be "call" as well
-            //
-            //
-            // let us remove value/gas attributes and remember then
-
 
             node.MsgGas = null;
             node.MsgValue = null;
@@ -252,12 +244,6 @@ namespace ConversionToBoogie
         public override void EndVisit(FunctionCall node)
         {
             currentStatement = null;
-        }
-
-
-        private void InsertStatementBefore(FunctionDefinition function, Statement beforeThis, Statement stmt)
-        {
-            InsertStatementBeforeImpl(function.Body, beforeThis, stmt);
         }
 
         private void InsertStatementBeforeImpl(Block block, Statement beforeThis, Statement stmt)

@@ -36,12 +36,14 @@ namespace ConversionToBoogie
             executeSourceInfoCollector();
             executeSolDesugar();
             executeContractCollection();
+            
             executeInheritanceCollector();
             executeStateVariableCollector();
             executeMapArrayCollector();
             executeConstructorCollector();
             executeFunctionEventCollector();
             executeFunctionEventResolver();
+
             executeAxiomGenerator();
             executeModifierCollector();
             executeUsingCollector();

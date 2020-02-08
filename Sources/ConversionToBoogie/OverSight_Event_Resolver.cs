@@ -21,7 +21,9 @@
 
         public void filterFunctions()
         {
-            OverSight_GenericResolver resolutionHelper = new OverSight_GenericResolver(classTranslatorContext);
+            OverSight_GenericResolver resolutionHelper = new OverSight_GenericResolver();
+            resolutionHelper.setContext(classTranslatorContext);
+
             List<ContractDefinition> sortedContracts = resolutionHelper.TopologicalSortByDependency(classTranslatorContext.ContractDefinitions);
 
             foreach (ContractDefinition contract in sortedContracts)

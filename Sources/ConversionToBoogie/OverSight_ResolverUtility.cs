@@ -8,11 +8,11 @@ namespace ConversionToBoogie
 
     public class OverSight_GenericResolver
     {
-        private TranslatorContext context;
+        private TranslatorContext classTranslatorContext;
 
-        public OverSight_GenericResolver(TranslatorContext context)
+        public void setContext(TranslatorContext translatorContext)
         {
-            this.context = context;
+            this.classTranslatorContext = translatorContext;
         }
 
         
@@ -30,40 +30,40 @@ namespace ConversionToBoogie
                     TopologicalSortImpl(visited, contract, result);
                 }
             }
-            Debug.Assert(result.Count == contracts.Count);
+
+            bool assert = true;
+
+            if(result.Count != contracts.Count)
+            {
+                assert = false;
+            }
+            if(assert == false)
+            {
+                return null;
+
+            }
             return result;
         }
 
-        private void TopologicalSortImpl(HashSet<ContractDefinition> visited, ContractDefinition contract, List<ContractDefinition> result)
+        private void TopologicalSortImpl(HashSet<ContractDefinition> visited, ContractDefinition contractDefinition, List<ContractDefinition> result)
         {
-            visited.Add(contract);
-            foreach (int id in contract.ContractDependencies)
+            visited.Add(contractDefinition);
+            foreach (int id in contractDefinition.ContractDependencies)
             {
-                ContractDefinition dependency = context.GetASTNodeById(id) as ContractDefinition;
+                ContractDefinition dependency = classTranslatorContext.GetASTNodeById(id) as ContractDefinition;
                 Debug.Assert(dependency != null);
-                if (!visited.Contains(dependency))
+
+                bool containsDependency = !visited.Contains(dependency);
+                if (containsDependency)
                 {
                     TopologicalSortImpl(visited, dependency, result);
                 }
             }
-            if (AllDependenciesVisited(visited, contract))
-            {
-                result.Add(contract);
-            }
+
+            //assuming all dependecies visited, addd contract definition
+            result.Add(contractDefinition);
         }
 
-        private bool AllDependenciesVisited(HashSet<ContractDefinition> visited, ContractDefinition contract)
-        {
-            foreach (int id in contract.ContractDependencies)
-            {
-                ContractDefinition dependency = context.GetASTNodeById(id) as ContractDefinition;
-                Debug.Assert(dependency != null);
-                if (!visited.Contains(dependency))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
+     
     }
 }
