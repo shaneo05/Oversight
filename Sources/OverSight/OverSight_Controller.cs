@@ -49,10 +49,17 @@ namespace OverSightHandler
             Console.WriteLine($"Running OverSight on Solidity Contract : {contractName}\n");
 
             //Due to no automation, the download path of the solidity and boogie compilers/exe must be manually stated
-            // This is for the time being and can be subject to change at a later date
+            // This is for the time being and can be subject to change at a later date if their is time later on
             //This is subject to change within the next week as dynamic flexibility is required across multiple machines
-            boogieExecutablePath = "C:\\Users\\shane\\Desktop\\TempOversight\\bin\\Debug\\boogie.exe";
-            solidityCompilerPath = "C:\\Users\\shane\\Desktop\\TempOversight\\bin\\Debug\\solc.exe";
+            string basePath = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+
+            boogieExecutablePath = basePath+"\\boogie.exe";     //locates the appropriate path using getDirectoryName
+            solidityCompilerPath = basePath+"\\solc.exe";
+            //solidityCompilerPath = "C:\\TempOversight\\bin\\Debug\\solc.exe";
+
+            //The application must keep the downloaded folder to its expected path.
+            //User should download the application and place it in the C drive
+
             this.ignoreMethods = new HashSet<Tuple<string, string>>(ignoreMethods);
             attemptProof = tryProofFlag;
 

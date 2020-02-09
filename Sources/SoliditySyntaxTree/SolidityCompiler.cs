@@ -17,7 +17,7 @@
                 throw new SystemException($"Cannot find solidity compiler at {solcPath}");
             }
 
-            derivedFilePath = derivedFilePath.Replace("\\", "/" /*, StringComparison.CurrentCulture*/);
+            derivedFilePath = derivedFilePath.Replace("\\", "/");
 
             string jsonString = RunSolc(solcPath, derivedFilePath);
 

@@ -16,7 +16,7 @@ namespace OverSightHandler
             //Entry point, if expected length is less than two, then prompt user with guidance such that the correct number of arguements can be entered 
 
             /////////////////////////Simplistic form of error checking in terms of number of arguments.
-            int expectedLength = 2;
+            int expectedLength = 2; 
             if (args.Length < expectedLength)
             {
                 ShowCMDInterface();
