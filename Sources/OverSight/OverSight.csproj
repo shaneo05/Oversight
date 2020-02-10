@@ -13,6 +13,9 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>OverSight</ToolCommandName>
     <Description>A prototype validation/verification tool for smart contracts written in Solidity</Description>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
+    <ApplicationIcon />
+    <StartupObject>OverSightHandler.CMD_Main</StartupObject>
   </PropertyGroup>
 
   <Import Project="..\OverSight.props" />
@@ -25,12 +28,14 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
-    
-    <ProjectReference Include="..\BoogieSyntaxTree\BoogieSyntaxTree.csproj" />
-    <ProjectReference Include="..\SoliditySyntaxTree\SoliditySyntaxTree.csproj" />
     <ProjectReference Include="..\ConversionToBoogie\ConversionToBoogie.csproj" />
+    <ProjectReference Include="..\SoliditySyntaxTree\SyntaxTrees.csproj" />
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="set batchName=C:\OversightRepo\Oversight\Project\runOverSight.bat&#xD;&#xA;echo @echo off &gt; runOverSight.bat&#xD;&#xA;echo &quot;$(TargetPath)&quot; &gt;&gt; runOverSight.bat&#xD;&#xA;echo pause &gt;&gt; runOverSight.bat" />
+  </Target>
 
 </Project>
