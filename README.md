@@ -10,12 +10,32 @@ Unless stated otherwise, branch "master" will contain the release code.
 
 # Installation
 
-Installation instructions can be found through accessing the following link.
+This zip repository contains all required dependencies/code pre-installed, thus leaving you to complete the following below.
+
+Download the zip (development) to your local machine.
+Place the folder in your "Main Drive" (C:/) (H:/)
+
+If a different source location is specified other than (C:/) then the location of the OverSight repo
+must also be amended within the batch file (runOverSight.bat).
+
+The batch file can be found in Sources\OverSight
+
+After adding the location of the "bat" file to "PATH" (refer to environment variables) the application can then be invoked from the CMD.
+
+To Run the application type "runOverSight"
+
+With 0 arguements the application will display usage details
+
+With 2 arguements (Location/Name of sol contract) (contract class name) the application will begin the conversion process and attempt verification in the contracts Boogie representation.
+
+VerificationOutcome.txt will then hold the outcome of this verification attempt, stating what caused it to either fail or pass and how many conditions were verified.
+
+This then in purpose provides layer of verfication prior to submission of a sol contract onto the blockchain.
 
 
 # Examples
 
-If any doubt arises regarding running the program, the following section should provide sufficient clarification.
+If any doubt arises regarding running the program, the following section should provide sufficient clarification using screenshots.
 
 # Licensing
 
