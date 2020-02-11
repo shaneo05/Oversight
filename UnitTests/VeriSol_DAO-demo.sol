@@ -1,6 +1,6 @@
 pragma solidity >=0.4.24<0.6.0;
 
-import "C:/Users/shane/Desktop/TempOversight/UnitTests/ValidationSpecs.sol";
+import "C:\OversightRepo\Oversight\Project\UnitTests\ValidationSpecs.sol";
 
 
 contract SimpleDAO {
