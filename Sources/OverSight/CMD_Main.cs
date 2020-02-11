@@ -1,58 +1,67 @@
 ﻿
 namespace OverSightHandler
 {
+    //Uses following System imports
     using System;
     using System.Collections.Generic;
     using System.IO;
 
-    using Microsoft.Extensions.Logging;
-    using SolToBoogie;
-
     /// <summary>
-    /// Top level application to run OverSight to target proofs as well as scalable counterexamples
+    /// Main Entry to OverSight to target proofs in sol contracts and analyse areas of potential future failure for user feedback
     /// </summary>
     class CMD_Main
     {
         public static int Main(string[] args)
         {
-            int expectedLength = 2;
+            //Entry point, if expected length is less than two, then prompt user with guidance such that the correct number of arguements can be entered 
+
+            /////////////////////////Simplistic form of error checking in terms of number of arguments.
+            int expectedLength = 2; 
             if (args.Length < expectedLength)
             {
                 ShowCMDInterface();
                 return 1;
             }
 
-            string solidityFile, entryPointContractName;
-            bool tryProofFlag;
-            int recursionBound;
-            ILogger logger;
-            HashSet<Tuple<string, string>> ignoredMethods;
-            bool printTransactionSequence = false;
-            TranslatorFlags translatorFlags = new TranslatorFlags();
+            if (args.Length > expectedLength)
+            {
+                ShowCMDInterface();
+                return 1;
+            }
 
-            SolToBoogie.ParseUtils.ParseCommandLineArgs(args,
-                out solidityFile,
-                out entryPointContractName,
-                out tryProofFlag,
-                out recursionBound,
-                out logger,
-                out ignoredMethods,
-                out printTransactionSequence, 
-                ref translatorFlags);
+            //Name of the sol contract.sol and its contract class name will be taken from args[] after being fed to the parser.
+            string solFile;
+            string classContractName;
 
-            var overSightExecutor =
-                new OverSightExecutor(
-                    Path.Combine(Directory.GetCurrentDirectory(), solidityFile), 
-                    entryPointContractName,
-                    ignoredMethods,
-                    tryProofFlag,
-                    logger,
-                    printTransactionSequence,
-                    translatorFlags);
-            return overSightExecutor.Execute();
+            //Status value to attempt proof on the sol contract
+            bool attemptProof = true;
+
+            
+            HashSet<Tuple<string, string>> ignoredMethods = new HashSet<Tuple<string, string>>();
+            ConversionToBoogie.TranslatorFlags translatorFlags = new ConversionToBoogie.TranslatorFlags();
+
+            
+            //parse the index command line arguements to sol file being index 0 and entryPointContractName as index 1
+            ConversionToBoogie.OverSight_CMD_Utilities.ParseCommandLineArgs(args, out solFile, out classContractName);
+
+            //Feed these to the OverSight constructor as parameters to begin proof conversion.
+            var overSightExecutor = new OverSightController(
+                                        Path.Combine(Directory.GetCurrentDirectory(), solFile), 
+                                        classContractName,
+                                        ignoredMethods,
+                                        attemptProof,
+                                        translatorFlags);
+            
+            return overSightExecutor.startOverSight(); //Begins execution of program in finding proof.
+            //The above call to execute should result in a 0 for successful completion.
         }
 
-
+        /**
+         * CMD Interface that is invoked upon, where less than two arguments are present 
+         * Or when more than two arguments are present.
+         * We are only looking for the solidity contract file location and its invocable 
+         * 
+         */
         static void ShowCMDInterface()
         {
 

@@ -1,4 +1,4 @@
-namespace BoogieAST
+namespace Boogie_Syntax_Tree
 {
     using System;
     using System.Collections.Generic;

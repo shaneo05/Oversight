@@ -5,11 +5,9 @@ VisualStudioVersion = 16.0.29709.97
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OverSight", "OverSight\OverSight.csproj", "{93430A6D-EBAB-40E9-AF7B-A26CD86365B9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BoogieSyntaxTree", "BoogieSyntaxTree\BoogieSyntaxTree.csproj", "{050AD673-56DF-4AE0-94BB-32024581624F}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConversionToBoogie", "ConversionToBoogie\ConversionToBoogie.csproj", "{BB7292D5-DF64-45E1-B307-4C127596610B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoliditySyntaxTree", "SoliditySyntaxTree\SoliditySyntaxTree.csproj", "{D9886A9A-4A4E-4B74-9BA5-18C0B3B833A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SyntaxTrees", "SoliditySyntaxTree\SyntaxTrees.csproj", "{D9886A9A-4A4E-4B74-9BA5-18C0B3B833A7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,18 +31,6 @@ Global
 		{93430A6D-EBAB-40E9-AF7B-A26CD86365B9}.Release|x64.Build.0 = Release|Any CPU
 		{93430A6D-EBAB-40E9-AF7B-A26CD86365B9}.Release|x86.ActiveCfg = Release|Any CPU
 		{93430A6D-EBAB-40E9-AF7B-A26CD86365B9}.Release|x86.Build.0 = Release|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Debug|x64.Build.0 = Debug|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Debug|x86.Build.0 = Debug|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Release|x64.ActiveCfg = Release|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Release|x64.Build.0 = Release|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Release|x86.ActiveCfg = Release|Any CPU
-		{050AD673-56DF-4AE0-94BB-32024581624F}.Release|x86.Build.0 = Release|Any CPU
 		{BB7292D5-DF64-45E1-B307-4C127596610B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BB7292D5-DF64-45E1-B307-4C127596610B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB7292D5-DF64-45E1-B307-4C127596610B}.Debug|x64.ActiveCfg = Debug|Any CPU

@@ -1,0 +1,72 @@
+﻿
+
+namespace ConversionToBoogie
+{
+    using System;
+    using System.Collections.Generic;
+    using Boogie_Syntax_Tree;
+    using Sol_Syntax_Tree;
+
+    public class HoudiniHelper
+    {
+        // returns a map from integer id to an atomic Boogie predicate
+        public static Dictionary<int, BoogieExpr> GenerateHoudiniVarMapping(ContractDefinition contract, TranslatorContext context)
+        {
+            Dictionary<int, BoogieExpr> ret = new Dictionary<int, BoogieExpr>();
+            HashSet<VariableDeclaration> stateVars = context.GetVisibleStateVarsByContract(contract);
+
+            // collect all state variables of type address
+            List<VariableDeclaration> addressVariables = new List<VariableDeclaration>();
+            foreach (VariableDeclaration stateVar in stateVars)
+            {
+                if (stateVar.TypeName is ElementaryTypeName elementaryType)
+                {
+                    if (elementaryType.TypeDescriptions.TypeString.Equals("address") ||
+                        elementaryType.TypeDescriptions.TypeString.Equals("address payable"))
+                    {
+                        addressVariables.Add(stateVar);
+                    }
+                }
+            }
+
+            int id = 0;
+
+            // equaility and disequality to null
+            for (int index = 0; index < addressVariables.Count; index++)
+            {
+                VariableDeclaration address = addressVariables[index];
+
+                BoogieExpr lhs = GetBoogieExprOfStateVar(address, context);
+                BoogieExpr rhs = new BoogieIdentifierExpr("null");
+                BoogieExpr equality = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.EQ, lhs, rhs);
+                ret[++id] = equality;
+                BoogieExpr disequality = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.NEQ, lhs, rhs);
+                ret[++id] = disequality;
+            }
+
+            // pair-wise equality and disequality
+            for (int i = 0; i < addressVariables.Count; ++i)
+            {
+                BoogieExpr lhs = GetBoogieExprOfStateVar(addressVariables[i], context);
+                for (int j = i + 1; j < addressVariables.Count; ++j)
+                {
+                    BoogieExpr rhs = GetBoogieExprOfStateVar(addressVariables[j], context);
+                    BoogieExpr equality = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.EQ, lhs, rhs);
+                    ret[++id] = equality;
+                    BoogieExpr disequality = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.NEQ, lhs, rhs);
+                    ret[++id] = disequality;
+                }
+            }
+
+            // PrintHoudiniCandidateMap(ret);
+            return ret;
+        }
+
+        private static BoogieMapSelect GetBoogieExprOfStateVar(VariableDeclaration varDecl, TranslatorContext context)
+        {
+            string name = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
+            BoogieMapSelect mapSelect = new BoogieMapSelect(new BoogieIdentifierExpr(name), new BoogieIdentifierExpr("this"));
+            return mapSelect;
+        }
+    }
+}
