@@ -1,3 +1,3 @@
 @echo off 
-"C:\OversightRepo\Oversight\Project\bin\Debug\OverSight.dll" 
+dotnet "C:\OversightRepo\Oversight\Project\bin\Debug\OverSight.dll" %1 %2 
 pause 
