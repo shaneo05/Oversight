@@ -33,6 +33,9 @@ namespace ConversionToBoogie
 
             classTranslatorContext = context;
 
+            //Execute Collection process from given sol contract
+            //Will enable boogie conversion to occur once specific states/functions/variables have been retrieved from the contract
+
             executeSourceInfoCollector();
             executeSolDesugar();
             executeContractCollection();
@@ -85,7 +88,7 @@ namespace ConversionToBoogie
     private void executeSolDesugar()
     {
         // de-sugar the solidity AST
-        // will modify the AST
+        // ASTs will not be modified due to the complexity associated with rewriting them for no benefit.
         OverSight_Solidity_DeConstruction desugaring = new OverSight_Solidity_DeConstruction(classTranslatorContext);
         sourceUnits.Accept(desugaring);
     }
