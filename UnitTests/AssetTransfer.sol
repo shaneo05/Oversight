@@ -1,6 +1,6 @@
 pragma solidity >=0.4.20;
 
-contract AssetTransfer /* is WorkbenchBase('AssetTransfer', 'AssetTransfer') */
+contract AssetTransfer
 {
     enum StateType { Active, OfferPlaced, PendingInspection, Inspected, Appraised, NotionalAcceptance, BuyerAccepted, SellerAccepted, Accepted, Terminated }
     address public InstanceOwner;

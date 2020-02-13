@@ -34,7 +34,7 @@ namespace OverSightHandler
         private readonly bool attemptProof;
 
         //BPL file containing boogie output 
-        private readonly string outFileName = "BoogieConversion.bpl";
+        private readonly string boogieRepresentationOfSolContract = "BoogieConversion.bpl";
 
         private readonly HashSet<Tuple<string, string>> ignoreMethods;
         private readonly TranslatorFlags translatorFlags;
@@ -102,19 +102,19 @@ namespace OverSightHandler
                 //
                 $"-doModSetAnalysis",
                 $"-inline:spec", //was assert to before to fail when reaching recursive functions
-                $"-noinfer", //no inference,        However can it be implemented later
+                $"-noinfer", //no inference,        However can it be implemented later if there is time
                 $"-inlineDepth:{translatorFlags.InlineDepthForBoogie}", //contractInfer can perform inlining as well
                 // main method
                 $"-proc:BoogieEntry_*",
                 // The boogie file to perform verification on , in this case will be ConversionToBoogie.bpl
-                outFileName
+                boogieRepresentationOfSolContract
             };
             
             var verificationArguementsAsString = string.Join(" ", verificationArguments);
             //BoogieArgString will represent -doModSetAnalysis -inline:spec (was assert) -noinfer -contractInfer -proc:BoogieEntry_* out.bpl
 
             Console.WriteLine($"\nSolidity to Boogie Conversion has successfully completed.");
-            Console.WriteLine($"Refer to {outFileName} for boogie src code\n");
+            Console.WriteLine($"Refer to {boogieRepresentationOfSolContract} for boogie src code\n");
             Console.WriteLine($"Attempting to find proof.....");
 
             var boogieOut = RunBoogieAnalysisExe(boogieExecutablePath, verificationArguementsAsString);
@@ -139,7 +139,8 @@ namespace OverSightHandler
             else
             {
                 Console.WriteLine($"Validation/Verification has proved [unsuccessful].");
-                Console.WriteLine($"\t*** OverSight was unable to find a proof (see {boogieOutFile})");
+                Console.WriteLine($"\t ---OverSight was unable to find a proof (see {boogieOutFile})");
+                Console.WriteLine("\nAdvised to revisit contract before publication onto distributed ledger");
                 return false;
             }
                  
@@ -178,8 +179,8 @@ namespace OverSightHandler
                 BoogieAST boogieAST = translator.Translate(solidityAST, ignoreMethods, translatorFlags);
 
                 // dump the Boogie program to a file
-                var outFilePath = Path.Combine(solidityFileDir, outFileName);
-                using (var outWriter = new StreamWriter(outFileName))
+                var outFilePath = Path.Combine(solidityFileDir, boogieRepresentationOfSolContract);
+                using (var outWriter = new StreamWriter(boogieRepresentationOfSolContract))
                 {
                     outWriter.WriteLine(boogieAST.GetRoot());
                 }
@@ -199,6 +200,7 @@ namespace OverSightHandler
             string errorMessage = "";
 
             Process process = new Process();
+            //process for verification
 
             try
             {
