@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./IERC20.sol";
 import "./SafeMath.sol";
-import "./Libraries/VeriSolContracts.sol";
+import "C:/OversightRepo/Oversight/Project/UnitTests/ValidationSpecs.sol";
 
 //import "../../math/SafeMath.sol";
 
@@ -13,7 +13,7 @@ import "./Libraries/VeriSolContracts.sol";
  * 
  */
 contract ERC20 is IERC20 {
-    // using SafeMath for uint256; //VeriSol issue #71
+    // using SafeMath for uint256; //OverSight issue #71
 
     mapping (address => uint256) private _balances;
 
@@ -62,9 +62,9 @@ contract ERC20 is IERC20 {
 
         _transfer(msg.sender, recipient, amount); 
 
-        assert (VeriSol.Old(_balances[msg.sender] + _balances[recipient]) == _balances[msg.sender] + _balances[recipient]);
-        //assert (_balances[msg.sender] == VeriSol.Old(_balances[msg.sender] - amount));
-        //assert (_balances[recipient]  == VeriSol.Old(_balances[recipient] + amount));
+        assert (OverSight.Old(_balances[msg.sender] + _balances[recipient]) == _balances[msg.sender] + _balances[recipient]);
+        //assert (_balances[msg.sender] == OverSight.Old(_balances[msg.sender] - amount));
+        //assert (_balances[recipient]  == OverSight.Old(_balances[recipient] + amount));
 
         return true;
     }
@@ -94,11 +94,11 @@ contract ERC20 is IERC20 {
     }
 
     function checkInvariant() public  {
-        assert(_totalSupply == VeriSol.SumMapping(_balances));
+        assert(_totalSupply == OverSight.SumMapping(_balances));
     }
 
     function contractInvariant() private view {
-        VeriSol.ContractInvariant(_totalSupply == VeriSol.SumMapping(_balances));
+        OverSight.ContractInvariant(_totalSupply == OverSight.SumMapping(_balances));
     }
 
 }

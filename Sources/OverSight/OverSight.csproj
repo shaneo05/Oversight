@@ -12,7 +12,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>OverSight</ToolCommandName>
-    <Description>A prototype validation/verification tool for smart contracts written in Solidity</Description>
+    <Description>A prototype verification tool for smart contracts written in Solidity</Description>
     <RunPostBuildEvent>Always</RunPostBuildEvent>
     <ApplicationIcon />
     <StartupObject>OverSightHandler.CMD_Main</StartupObject>
@@ -34,8 +34,6 @@
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="set batchName=C:\OversightRepo\Oversight\Project\runOverSight.bat&#xD;&#xA;echo @echo off &gt; runOverSight.bat&#xD;&#xA;echo &quot;$(TargetPath)&quot; &gt;&gt; runOverSight.bat&#xD;&#xA;echo pause &gt;&gt; runOverSight.bat" />
-  </Target>
+  
 
 </Project>

@@ -40,7 +40,7 @@ namespace Boogie_Syntax_Tree
             Declarations = new List<BoogieDeclaration>();
         }
 
-        public void AddDeclaration(BoogieDeclaration declaration)
+        public void AddBoogieDeclaration(BoogieDeclaration declaration)
         {
             Declarations.Add(declaration);
         }

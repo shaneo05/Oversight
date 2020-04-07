@@ -12,9 +12,9 @@
             // left empty
         }
 
-        public virtual bool Visit(SourceUnitList node) { return CommonVisit(node); }
+        public virtual bool Visit_SRCINFO(SourceUnitList node) { return CommonVisit(node); }
 
-        public virtual bool Visit(SourceUnit node) { return CommonVisit(node); }
+        public virtual bool Visit_SourceUnit(SourceUnit node) { return CommonVisit(node); }
 
         public virtual bool Visit(PragmaDirective node) { return CommonVisit(node); }
 
@@ -22,11 +22,11 @@
 
         public virtual bool Visit(ImportDirective node) { return CommonVisit(node); }
 
-        public virtual bool ContractDefinition_VisitNode(ContractDefinition node) { return CommonVisit(node); }
+        public virtual bool ContractDefinition_ReTraceNode(ContractDefinition node) { return CommonVisit(node); }
 
         public virtual bool Visit(InheritanceSpecifier node) { return CommonVisit(node); }
 
-        public virtual bool FunctionDefinition_VisiNode(FunctionDefinition node) { return CommonVisit(node); }
+        public virtual bool FunctionDefinition_TraceNode(FunctionDefinition node) { return CommonVisit(node); }
 
         public virtual bool Visit(ParameterList node) { return CommonVisit(node); }
 
@@ -34,7 +34,7 @@
 
         public virtual bool Visit(ModifierInvocation node) { return CommonVisit(node); }
 
-        public virtual bool EventDefinition_VisitNode(EventDefinition node) { return CommonVisit(node); }
+        public virtual bool EventDefinition_TraceNode(EventDefinition node) { return CommonVisit(node); }
 
         public virtual bool Visit(StructDefinition node) { return CommonVisit(node); }
 
@@ -115,7 +115,7 @@
 
         public virtual void EndVisit(ImportDirective node) { CommonEndVisit(node); }
 
-        public virtual void ContractDefinition_VisitCompletion(ContractDefinition node) { CommonEndVisit(node); }
+        public virtual void ContractDefinition_NullifyNode(ContractDefinition node) { CommonEndVisit(node); }
 
         public virtual void EndVisit(InheritanceSpecifier node) { CommonEndVisit(node); }
 

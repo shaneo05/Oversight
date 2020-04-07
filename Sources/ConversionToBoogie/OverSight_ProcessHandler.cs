@@ -11,9 +11,13 @@ namespace ConversionToBoogie
     using Boogie_Syntax_Tree;
     using Sol_Syntax_Tree;
 
+    /**
+     * Leveraged process handler to facilitate greater logic of boogie property translation
+     */
     public class OverSight_ProcessHandler : Generic_Syntax_Tree_Visitor
     {
-        private readonly TranslatorContext context;
+        //context reference containing declarations and current boogie program. 
+        private readonly AST_Handler context;
 
         // used to declare local vars in a Boogie implementation
         private readonly Dictionary<string, List<BoogieVariable>> boogieToLocalVarsMap;
@@ -36,8 +40,14 @@ namespace ConversionToBoogie
         // to generate inline attributes 
         private readonly bool genInlineAttrsInBpl;
 
-        // to collect contract invariants
-        private readonly Dictionary<string, List<BoogieExpr>> contractInvariants = null;
+        //Constructor to handle assignmen of AST properties amongst intialisation of other attributes.
+        public OverSight_ProcessHandler(AST_Handler context, bool _genInlineAttrsInBpl = true)
+        {
+            this.context = context;
+            boogieToLocalVarsMap = new Dictionary<string, List<BoogieVariable>>();
+            genInlineAttrsInBpl = _genInlineAttrsInBpl;
+            ContractInvariants = new Dictionary<string, List<BoogieExpr>>();
+        }
 
         private static void emitGasCheck(BoogieStmtList newBody)
         {
@@ -51,7 +61,7 @@ namespace ConversionToBoogie
 
         private void preTranslationAction(ASTNode node)
         {
-            if (context.TranslateFlags.InstrumentGas)
+            if (Flags_HelperClass.InstrumentGas)
             {
                 if (node.GasCost > 0)
                     // gas := gas - node.GasCost
@@ -68,15 +78,9 @@ namespace ConversionToBoogie
             }
         }
 
-        public OverSight_ProcessHandler(TranslatorContext context, bool _genInlineAttrsInBpl = true)
-        {
-            this.context = context;
-            boogieToLocalVarsMap = new Dictionary<string, List<BoogieVariable>>();
-            genInlineAttrsInBpl = _genInlineAttrsInBpl;
-            contractInvariants = new Dictionary<string, List<BoogieExpr>>();
-        }
+   
         
-        public override bool ContractDefinition_VisitNode(ContractDefinition node)
+        public override bool ContractDefinition_ReTraceNode(ContractDefinition node)
         {
             preTranslationAction(node);
 
@@ -87,7 +91,7 @@ namespace ConversionToBoogie
                 return true;
 
             // generate default empty constructor if there is no constructor explicitly defined
-            if (!context.IsConstructorDefined(node))
+            if (!context.checkConstructorExists(node))
             {
                 GenerateDefaultConstructor(node);
             }
@@ -117,10 +121,10 @@ namespace ConversionToBoogie
             {
                 OverSightAssert(!member.TypeDescriptions.IsStruct(),
                     "Do no handle nested structs yet!");
-                var type = TranslatorUtilities.GetBoogieTypeFromSolidityTypeName(member.TypeName);
+                var type = Conversion_Utility_Tool.GetBoogieTypeFromSolidityTypeName(member.TypeName);
                 var mapType = new BoogieMapType(BoogieType.Ref, type);
                 var mapName = member.Name + "_" + structDefn.CanonicalName;
-                context.Program.AddDeclaration(new BoogieGlobalVariable(new BoogieTypedIdent(mapName, mapType)));
+                context.getProgram.AddBoogieDeclaration(new BoogieGlobalVariable(new BoogieTypedIdent(mapName, mapType)));
             }
         }
 
@@ -128,28 +132,28 @@ namespace ConversionToBoogie
         {
             OverSightAssert(varDecl.StateVariable, $"{varDecl} is not a state variable");
 
-            string name = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
-            BoogieType type = TranslatorUtilities.GetBoogieTypeFromSolidityTypeName(varDecl.TypeName);
+            string name = Conversion_Utility_Tool.GetCanonicalStateVariableName(varDecl, context);
+            BoogieType type = Conversion_Utility_Tool.GetBoogieTypeFromSolidityTypeName(varDecl.TypeName);
             BoogieMapType mapType = new BoogieMapType(BoogieType.Ref, type);
 
             // Issue a warning for intXX variables in case /useModularArithemtic option is used:
-            if (context.TranslateFlags.UseModularArithmetic && varDecl.TypeDescriptions.IsInt())
+            if (Flags_HelperClass.UseModularArithmetic && varDecl.TypeDescriptions.IsInt())
             {
                 Console.WriteLine($"Warning: signed integer arithmetic is not handled with /useModularArithmetic option");
             }
 
             if (varDecl.TypeName is Mapping)
             {
-                context.Program.AddDeclaration(new BoogieGlobalVariable(new BoogieTypedIdent(name, mapType)));
+                context.getProgram.AddBoogieDeclaration(new BoogieGlobalVariable(new BoogieTypedIdent(name, mapType)));
             }
             else if (varDecl.TypeName is ArrayTypeName)
             {
                 //array variables can be assigned
-                context.Program.AddDeclaration(new BoogieGlobalVariable(new BoogieTypedIdent(name, mapType)));
+                context.getProgram.AddBoogieDeclaration(new BoogieGlobalVariable(new BoogieTypedIdent(name, mapType)));
             }
             else // other type of state variables
             {
-                context.Program.AddDeclaration(new BoogieGlobalVariable(new BoogieTypedIdent(name, mapType)));
+                context.getProgram.AddBoogieDeclaration(new BoogieGlobalVariable(new BoogieTypedIdent(name, mapType)));
             }
         }
 
@@ -163,7 +167,7 @@ namespace ConversionToBoogie
         private BoogieCallCmd InstrumentForPrintingData(TypeDescription type, BoogieExpr value, string name)
         {
             // don't emit the instrumentation 
-            if (context.TranslateFlags.NoDataValuesInfoFlag)
+            if (Flags_HelperClass.NoDataValuesInfoFlag)
                 return null;
 
             if (type.IsDynamicArray() || type.IsStaticArray())
@@ -274,7 +278,7 @@ namespace ConversionToBoogie
                 currentStmtList.AddStatement(callCmd);
             }
         }
-        public override bool FunctionDefinition_VisiNode(FunctionDefinition node)
+        public override bool FunctionDefinition_TraceNode(FunctionDefinition node)
         {
             preTranslationAction(node);
             // OverSightAssert(node.IsConstructor || node.Modifiers.Count <= 1, "Multiple Modifiers are not supported yet");
@@ -285,14 +289,14 @@ namespace ConversionToBoogie
             // procedure name
             string procName = node.Name + "_" + currentContract.Name;
 
-            if (node.IsConstructor)
+            if (node.ofConstructorType)
             {
                 procName += "_NoBaseCtor";
             }
             currentBoogieProc = procName;
 
             // input parameters
-            List<BoogieVariable> inParams = TranslatorUtilities.GetDefaultInParams();
+            List<BoogieVariable> inParams = Conversion_Utility_Tool.GetDefaultInParams();
             // initialize statement list to include assumption about parameter types
             currentStmtList = new BoogieStmtList();
             // get all formal input parameters
@@ -314,8 +318,8 @@ namespace ConversionToBoogie
             // attributes
             List<BoogieAttribute> attributes = new List<BoogieAttribute>();
             if ((node.Visibility == EnumVisibility.PUBLIC || node.Visibility == EnumVisibility.EXTERNAL)
-                && !node.IsConstructor
-                && !node.IsFallback) //don't expose fallback for calling directly
+                && !node.ofConstructorType
+                && !node.ofFallBackType) //don't expose fallback for calling directly
             {
                 attributes.Add(new BoogieAttribute("public"));
             }
@@ -330,7 +334,7 @@ namespace ConversionToBoogie
             }
             // we add any pre/post conditions after analyzing the boy later
             BoogieProcedure procedure = new BoogieProcedure(procName, inParams, outParams, attributes);
-            context.Program.AddDeclaration(procedure);
+            context.getProgram.AddBoogieDeclaration(procedure);
 
             // could be just a declaration
             if (!node.Implemented)
@@ -338,13 +342,7 @@ namespace ConversionToBoogie
                 return false;
             }
 
-            // skip if it in ignored set
-            if (context.IsMethodInIgnoredSet(node, currentContract))
-            {
-                Console.WriteLine($"Warning!: Ignoring method {node.Name} in contract {currentContract.Name} specified using /ignoreMethod:");
-            }
-            else
-            {
+           
                 // local variables and function body
                 // TODO: move to earlier
                 boogieToLocalVarsMap[currentBoogieProc] = new List<BoogieVariable>();
@@ -374,79 +372,9 @@ namespace ConversionToBoogie
                     procBody.AddStatement(new BoogieCommentCmd("---- Logic for payable function END "));
                 }
 
-                // if (node.Modifiers.Count == 1)
-                for (int i = 0; i < node.Modifiers.Count; ++i)
-                {
-                    // insert call to modifier prelude
-                    if (context.ModifierToBoogiePreImpl.ContainsKey(node.Modifiers[i].ModifierName.Name))
-                    {
-                        List<BoogieExpr> arguments = TranslatorUtilities.GetDefaultArguments();
-                        if (node.Modifiers[i].Arguments != null)
-                            arguments.AddRange(node.Modifiers[i].Arguments.ConvertAll(TranslateExpr));
-                        string callee = node.Modifiers[i].ModifierName.ToString() + "_pre";
-                        var callCmd = new BoogieCallCmd(callee, arguments, null);
-                        procBody.AddStatement(callCmd);
-                    }
-
-                    // insert call to modifier postlude
-                    if (context.ModifierToBoogiePostImpl.ContainsKey(node.Modifiers[i].ModifierName.Name))
-                    {
-                        List<BoogieExpr> arguments = TranslatorUtilities.GetDefaultArguments();
-                        if (node.Modifiers[i].Arguments != null)
-                            arguments.AddRange(node.Modifiers[i].Arguments.ConvertAll(TranslateExpr));
-                        string callee = node.Modifiers[i].ModifierName.ToString() + "_post";
-                        var callCmd = new BoogieCallCmd(callee, arguments, null);
-                        currentPostlude.AddStatement(callCmd);
-                    }
-                }
-
-                procBody.AppendStmtList(TranslateStatement(node.Body));
-
-                // add modifier postlude call if function body has no return
-                if (currentPostlude != null)
-                {
-                    procBody.AppendStmtList(currentPostlude);
-                    currentPostlude = null;
-                }
-
-                // initialization statements
-                if (node.IsConstructor)
-                {
-                    BoogieStmtList oldCurrentStmtList = currentStmtList;
-                    currentStmtList = new BoogieStmtList();
-                    BoogieStmtList initStmts;
-                    GenerateInitializationStmts(currentContract);
-                    initStmts = currentStmtList;
-                    currentStmtList = oldCurrentStmtList;
-                    initStmts.AppendStmtList(procBody);
-                    procBody = initStmts;
-                }
-
-                // is it a OverSight Contract Invariant function?
-                if (IsOverSightContractInvariantFunction(node, procBody, out List<BoogieExpr> contractInvs))
-                {
-                    //add contract invs as loop invariants to outer loop
-                    OverSightAssert(!contractInvariants.ContainsKey(currentContract.Name), $"More than one function defining the contract invariant for contract {currentContract.Name}");
-                    contractInvariants[currentContract.Name] = contractInvs;
-                }
-                else
-                {
-                    //extract the specifications from within the body
-                    var preconditions = ExtractSpecifications("Requires_OverSight", procBody, out BoogieStmtList procBodyWoRequires);
-                    var postconditions = ExtractSpecifications("Ensures_OverSight", procBodyWoRequires, out BoogieStmtList procBodyWoEnsures);
-                    var modifies = ExtractSpecifications("Modifies_OverSight", procBodyWoEnsures, out BoogieStmtList procBodyWoModifies);
-
-                    procedure.AddPreConditions(preconditions);
-                    procedure.AddPostConditions(postconditions);
-                    procedure.AddPostConditions(modifies);
-                    List<BoogieVariable> localVars = boogieToLocalVarsMap[currentBoogieProc];
-                    BoogieImplementation impelementation = new BoogieImplementation(procName, inParams, outParams, localVars, procBodyWoModifies);
-                    context.Program.AddDeclaration(impelementation);
-                }
-            }
-
+          
             // generate real constructors
-            if (node.IsConstructor)
+            if (node.ofConstructorType)
             {
                 GenerateConstructorWithBaseCalls(node, inParams);
             }
@@ -534,7 +462,7 @@ namespace ConversionToBoogie
             currentStmtList.AddStatement(assumeCmd);
 
             // assign null to other address variables
-            foreach (VariableDeclaration varDecl in context.GetStateVarsByContract(contract))
+            foreach (VariableDeclaration varDecl in context.retrieveStateVariables(contract))
             {
                 if (varDecl.TypeName is ElementaryTypeName elementaryType)
                 {
@@ -543,7 +471,7 @@ namespace ConversionToBoogie
             }
 
             // false/0 initialize mappings
-            foreach (VariableDeclaration varDecl in context.GetStateVarsByContract(contract))
+            foreach (VariableDeclaration varDecl in context.retrieveStateVariables(contract))
             {
                 if (varDecl.TypeName is Mapping mapping)
                 {
@@ -566,7 +494,7 @@ namespace ConversionToBoogie
         private void GenerateInitializationForArrayStateVar(VariableDeclaration varDecl, ArrayTypeName array)
         {
             // Issue a warning for intXX type in case /useModularArithemtic option is used:
-            if (context.TranslateFlags.UseModularArithmetic && array.BaseType.ToString().StartsWith("int"))
+            if (Flags_HelperClass.UseModularArithmetic && array.BaseType.ToString().StartsWith("int"))
             {
                 Console.WriteLine($"Warning: signed integer arithmetic is not handled with /useModularArithmetic option");
             }
@@ -636,7 +564,7 @@ namespace ConversionToBoogie
                 mapping.ValueType.ToString().StartsWith("int"))
             {
                 // Issue a warning for intXX type in case /useModularArithemtic option is used:
-                if (context.TranslateFlags.UseModularArithmetic && mapping.ValueType.ToString().StartsWith("int"))
+                if (Flags_HelperClass.UseModularArithmetic && mapping.ValueType.ToString().StartsWith("int"))
                 {
                     Console.WriteLine($"Warning: signed integer arithmetic is not handled with /useModularArithmetic option");
                 }
@@ -664,7 +592,7 @@ namespace ConversionToBoogie
         {
             if (elementaryType.TypeDescriptions.TypeString.Equals("address") || elementaryType.TypeDescriptions.TypeString.Equals("address payable"))
             {
-                string varName = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
+                string varName = Conversion_Utility_Tool.GetCanonicalStateVariableName(varDecl, context);
                 BoogieExpr lhs = new BoogieMapSelect(new BoogieIdentifierExpr(varName), new BoogieIdentifierExpr("this"));
                 BoogieExpr rhs = new BoogieIdentifierExpr("null");
                 if (varDecl.Value != null)
@@ -677,7 +605,7 @@ namespace ConversionToBoogie
             }
             else if (elementaryType.TypeDescriptions.TypeString.Equals("bool"))
             {
-                string varName = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
+                string varName = Conversion_Utility_Tool.GetCanonicalStateVariableName(varDecl, context);
                 BoogieExpr lhs = new BoogieMapSelect(new BoogieIdentifierExpr(varName), new BoogieIdentifierExpr("this"));
                 bool value = false;
                 if (varDecl.Value != null && varDecl.Value.ToString() == "true")
@@ -697,7 +625,7 @@ namespace ConversionToBoogie
                 }
                 int hashCode = x.GetHashCode();
                 BigInteger num = new BigInteger(hashCode);
-                string varName = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
+                string varName = Conversion_Utility_Tool.GetCanonicalStateVariableName(varDecl, context);
                 BoogieExpr lhs = new BoogieMapSelect(new BoogieIdentifierExpr(varName), new BoogieIdentifierExpr("this"));
                 BoogieAssignCmd assignCmd = new BoogieAssignCmd(lhs, new BoogieLiteralExpr(num));
                 currentStmtList.AddStatement(assignCmd);
@@ -705,12 +633,12 @@ namespace ConversionToBoogie
             else //it is integer valued
             {
                 // Issue a warning for intXX variables in case /useModularArithemtic option is used:
-                if (context.TranslateFlags.UseModularArithmetic && varDecl.TypeDescriptions.IsInt())
+                if (Flags_HelperClass.UseModularArithmetic && varDecl.TypeDescriptions.IsInt())
                 {
                     Console.WriteLine($"Warning: signed integer arithmetic is not handled with /useModularArithmetic option");
                 }
 
-                string varName = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
+                string varName = Conversion_Utility_Tool.GetCanonicalStateVariableName(varDecl, context);
                 BoogieExpr lhs = new BoogieMapSelect(new BoogieIdentifierExpr(varName), new BoogieIdentifierExpr("this"));
                 var bigInt = (BoogieExpr)new BoogieLiteralExpr(BigInteger.Zero);
                 if (varDecl.Value != null)
@@ -726,9 +654,9 @@ namespace ConversionToBoogie
         {
             currentStmtList.AddStatement(new BoogieCommentCmd($"Initialize length of 1-level nested array in {varDecl.Name}"));
             // Issue with inferring Array[] expressions in GetBoogieTypesFromMapping (TODO: use GetBoogieTypesFromMapping after fix)
-            var mapKeyType = MapArrayHelper.InferExprTypeFromTypeString(mapping.KeyType.TypeDescriptions.ToString());
-            string mapName = MapArrayHelper.GetMemoryMapName(mapKeyType, BoogieType.Ref);
-            string varName = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
+            var mapKeyType = Flags_HelperClass.getBoogieExpression(mapping.KeyType.TypeDescriptions.ToString());
+            string mapName = Flags_HelperClass.generateMemoryMapName(mapKeyType, BoogieType.Ref);
+            string varName = Conversion_Utility_Tool.GetCanonicalStateVariableName(varDecl, context);
             var varExpr = new BoogieIdentifierExpr(varName);
             //lhs is Mem_t_ref[x[this]]
             var lhs0 = new BoogieMapSelect(new BoogieIdentifierExpr(mapName),
@@ -772,12 +700,12 @@ namespace ConversionToBoogie
         private BoogieMapSelect CreateDistinctArrayMappingAddress(BoogieStmtList stmtList, VariableDeclaration varDecl)
         {
             // define a local variable to generate a fresh constant
-            BoogieLocalVariable tmpVar = new BoogieLocalVariable(context.MakeFreshTypedIdent(BoogieType.Ref));
+            BoogieLocalVariable tmpVar = new BoogieLocalVariable(context.createFreshIdentifier(BoogieType.Ref));
             boogieToLocalVarsMap[currentBoogieProc].Add(tmpVar);
             BoogieIdentifierExpr tmpVarIdentExpr = new BoogieIdentifierExpr(tmpVar.Name);
 
             stmtList.AddStatement(new BoogieCommentCmd($"Make array/mapping vars distinct for {varDecl.Name}"));
-            var lhs = new BoogieIdentifierExpr(TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context));
+            var lhs = new BoogieIdentifierExpr(Conversion_Utility_Tool.GetCanonicalStateVariableName(varDecl, context));
             var lhsMap = new BoogieMapSelect(lhs, new BoogieIdentifierExpr("this"));
             stmtList.AddStatement(new BoogieCallCmd(
                 "FreshRefGenerator",
@@ -793,15 +721,15 @@ namespace ConversionToBoogie
 
         private void GetBoogieTypesFromMapping(VariableDeclaration varDecl, Mapping mapping, out BoogieType mapKeyType, out BoogieMapSelect lhs)
         {
-            mapKeyType = MapArrayHelper.InferExprTypeFromTypeString(mapping.KeyType.TypeDescriptions.ToString());
+            mapKeyType = Flags_HelperClass.getBoogieExpression(mapping.KeyType.TypeDescriptions.ToString());
             var mapValueTypeString = mapping.ValueType is UserDefinedTypeName ?
                 ((UserDefinedTypeName)mapping.ValueType).TypeDescriptions.ToString() :
                 mapping.ValueType.ToString();
             // needed as a mapping(int => contract A) only has "A" as the valueType.ToSTring()
-            var mapValueType = MapArrayHelper.InferExprTypeFromTypeString(mapValueTypeString);
-            string mapName = MapArrayHelper.GetMemoryMapName(mapKeyType, mapValueType);
+            var mapValueType = Flags_HelperClass.getBoogieExpression(mapValueTypeString);
+            string mapName = Flags_HelperClass.generateMemoryMapName(mapKeyType, mapValueType);
 
-            string varName = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
+            string varName = Conversion_Utility_Tool.GetCanonicalStateVariableName(varDecl, context);
             var varExpr = new BoogieIdentifierExpr(varName);
             lhs = new BoogieMapSelect(new BoogieIdentifierExpr(mapName),
                 new BoogieMapSelect(varExpr, new BoogieIdentifierExpr("this")));
@@ -819,25 +747,25 @@ namespace ConversionToBoogie
                 boogieToLocalVarsMap[currentBoogieProc] = new List<BoogieVariable>();
             }
             
-            List<BoogieVariable> inParams = TranslatorUtilities.GetDefaultInParams();
+            List<BoogieVariable> inParams = Conversion_Utility_Tool.GetDefaultInParams();
             List<BoogieVariable> outParams = new List<BoogieVariable>();
             List<BoogieAttribute> attributes = new List<BoogieAttribute>();
-            if (context.TranslateFlags.GenerateInlineAttributes)
+            if (Flags_HelperClass.GenerateInlineAttributes)
             {
                 attributes.Add(new BoogieAttribute("inline", 1));
             };
             BoogieProcedure procedure = new BoogieProcedure(procName, inParams, outParams, attributes);
-            context.Program.AddDeclaration(procedure);
+            context.getProgram.AddBoogieDeclaration(procedure);
 
             BoogieStmtList procBody = GenerateInitializationStmts(contract);
             List<BoogieVariable> localVars = boogieToLocalVarsMap[currentBoogieProc];
             BoogieImplementation implementation = new BoogieImplementation(procName, inParams, outParams, localVars, procBody);
-            context.Program.AddDeclaration(implementation);
+            context.getProgram.AddBoogieDeclaration(implementation);
 
             // generate the actual one with base constructors
             string ctorName = contract.Name + "_" + contract.Name;
             BoogieProcedure ctorWithBaseCalls = new BoogieProcedure(ctorName, inParams, outParams, attributes);
-            context.Program.AddDeclaration(ctorWithBaseCalls);
+            context.getProgram.AddBoogieDeclaration(ctorWithBaseCalls);
 
             List<BoogieVariable> ctorLocalVars = new List<BoogieVariable>();
             BoogieStmtList ctorBody = new BoogieStmtList();
@@ -848,17 +776,17 @@ namespace ConversionToBoogie
 
             // print sourcefile, and line of the contract start for
             // forcing Corral to print values consistently
-            if (!context.TranslateFlags.NoSourceLineInfoFlag)
+            if (!Flags_HelperClass.NoSourceLineInfoFlag)
                 ctorBody.AddStatement(InstrumentSourceFileAndLineInfo(contract));
 
-            List<int> baseContractIds = new List<int>(contract.LinearizedBaseContracts);
+            List<int> baseContractIds = new List<int>(contract.LinearBaseContracts);
             baseContractIds.Reverse();
             foreach (int id in baseContractIds)
             {
-                ContractDefinition baseContract = context.GetASTNodeById(id) as ContractDefinition;
+                ContractDefinition baseContract = context.retrieveASTNodethroughID(id) as ContractDefinition;
                 OverSightAssert(baseContract != null);
 
-                string callee = TranslatorUtilities.GetCanonicalConstructorName(baseContract);
+                string callee = Conversion_Utility_Tool.GetCanonicalConstructorName(baseContract);
                 if (baseContract.Name == contract.Name)
                 {
                     // for current contract, call the body that does not have the base calls
@@ -895,7 +823,7 @@ namespace ConversionToBoogie
                     {
                         // Do we call the constructor or assume that it is invoked in teh base contract?
                         // since it needs argument, we cannot invoke it here (Issue #101)
-                        var baseCtr = context.IsConstructorDefined(baseContract) ? context.GetConstructorByContract(baseContract) : null;
+                        var baseCtr = context.checkConstructorExists(baseContract) ? context.retrieveConstructor(baseContract) : null;
                         if (baseCtr != null && baseCtr.Parameters.Length() > 0)
                         {
                             continue;
@@ -912,13 +840,13 @@ namespace ConversionToBoogie
                 ctorBody.AddStatement(callCmd);
             }
             BoogieImplementation ctorImpl = new BoogieImplementation(ctorName, inParams, outParams, ctorLocalVars, ctorBody);
-            context.Program.AddDeclaration(ctorImpl);
+            context.getProgram.AddBoogieDeclaration(ctorImpl);
         }
 
         // generate actual constructor procedures that invoke constructors without base in linearized order
         private void GenerateConstructorWithBaseCalls(FunctionDefinition ctor, List<BoogieVariable> inParams)
         {
-            OverSightAssert(ctor.IsConstructor, $"{ctor.Name} is not a constructor");
+            OverSightAssert(ctor.ofConstructorType, $"{ctor.Name} is not a constructor");
 
             ContractDefinition contract = context.GetContractByFunction(ctor);
             string procName = contract.Name + "_" + contract.Name;
@@ -930,25 +858,19 @@ namespace ConversionToBoogie
                 new BoogieAttribute("constructor"),
                 new BoogieAttribute("public"),
             };
-            if (context.TranslateFlags.GenerateInlineAttributes)
+            if (Flags_HelperClass.GenerateInlineAttributes)
             {
                 attributes.Add(new BoogieAttribute("inline", 1));
             };
             BoogieProcedure procedure = new BoogieProcedure(procName, inParams, outParams, attributes);
-            context.Program.AddDeclaration(procedure);
+            context.getProgram.AddBoogieDeclaration(procedure);
 
-            // skip if it in ignored set
-            if (context.IsMethodInIgnoredSet(ctor, currentContract))
-            {
-                Console.WriteLine($"Warning!: Ignoring constructor {ctor.Name} in contract {currentContract.Name} specified using /ignoreMethod:");
-            }
-            else
-            {
+          
                 // no local variables for constructor
                 List<BoogieVariable> localVars = new List<BoogieVariable>();
                 BoogieStmtList ctorBody = new BoogieStmtList();
 
-                List<int> baseContractIds = new List<int>(contract.LinearizedBaseContracts);
+                List<int> baseContractIds = new List<int>(contract.LinearBaseContracts);
                 baseContractIds.Reverse();
 
                 // Print function argument values to corral.txt for counterexample:
@@ -957,13 +879,13 @@ namespace ConversionToBoogie
                 //Note that the current derived contract appears as a baseContractId 
                 foreach (int id in baseContractIds)
                 {
-                    ContractDefinition baseContract = context.GetASTNodeById(id) as ContractDefinition;
+                    ContractDefinition baseContract = context.retrieveASTNodethroughID(id) as ContractDefinition;
                     OverSightAssert(baseContract != null);
 
                     // since we are not translating any statements, currentStmtList remains null
                     currentStmtList = new BoogieStmtList();
 
-                    string callee = TranslatorUtilities.GetCanonicalConstructorName(baseContract);
+                    string callee = Conversion_Utility_Tool.GetCanonicalConstructorName(baseContract);
                     if (baseContract.Name == contract.Name)
                     {
                         // for current contract, call the body that does not have the base calls
@@ -1010,7 +932,7 @@ namespace ConversionToBoogie
                             // Do we call the constructor or assume that it is invoked in teh base contract?
                             // Do we call the constructor or assume that it is invoked in teh base contract?
                             // since it needs argument, we cannot invoke it here (Issue #101)
-                            var baseCtr = context.IsConstructorDefined(baseContract) ? context.GetConstructorByContract(baseContract) : null;
+                            var baseCtr = context.checkConstructorExists(baseContract) ? context.retrieveConstructor(baseContract) : null;
                             if (baseCtr != null && baseCtr.Parameters.Length() > 0)
                             {
                                 continue;
@@ -1028,13 +950,12 @@ namespace ConversionToBoogie
                     ctorBody.AppendStmtList(currentStmtList);
                     ctorBody.AddStatement(callCmd);
                     currentStmtList = null;
-                }
-
+                
 
 
                 localVars.AddRange(boogieToLocalVarsMap[currentBoogieProc]);
                 BoogieImplementation implementation = new BoogieImplementation(procName, inParams, outParams, localVars, ctorBody);
-                context.Program.AddDeclaration(implementation);
+                context.getProgram.AddBoogieDeclaration(implementation);
             }           
         }
 
@@ -1061,7 +982,7 @@ namespace ConversionToBoogie
             foreach (ModifierInvocation modifierInvocation in ctor.Modifiers)
             {
                 int id = modifierInvocation.ModifierName.ReferencedDeclaration;
-                if (context.GetASTNodeById(id) is ContractDefinition contractDef)
+                if (context.retrieveASTNodethroughID(id) is ContractDefinition contractDef)
                 {
                     if (contractDef == baseContract)
                     {
@@ -1084,7 +1005,7 @@ namespace ConversionToBoogie
             foreach (VariableDeclaration parameter in node.Parameters)
             {
                 // Issue a warning for intXX variables in case /useModularArithemtic option is used:
-                if (context.TranslateFlags.UseModularArithmetic && parameter.TypeDescriptions.IsInt())
+                if (Flags_HelperClass.UseModularArithmetic && parameter.TypeDescriptions.IsInt())
                 {
                     Console.WriteLine($"Warning: signed integer arithmetic is not handled with /useModularArithmetic option");
                 }
@@ -1099,9 +1020,9 @@ namespace ConversionToBoogie
                 }
                 else
                 {
-                    name = TranslatorUtilities.GetCanonicalLocalVariableName(parameter, context);
+                    name = Conversion_Utility_Tool.GetCanonicalLocalVariableName(parameter, context);
                 }
-                BoogieType type = TranslatorUtilities.GetBoogieTypeFromSolidityTypeName(parameter.TypeName);
+                BoogieType type = Conversion_Utility_Tool.GetBoogieTypeFromSolidityTypeName(parameter.TypeName);
                 var boogieParam = new BoogieFormalParam(new BoogieTypedIdent(name, type));
                 currentParamList.Add(boogieParam);
             }
@@ -1112,11 +1033,8 @@ namespace ConversionToBoogie
         // this now accumulates all Boogie stmts generated when they are being generated
         private BoogieStmtList currentStmtList = null;
 
-        /// <summary>
         /// This the only method that returns a BoogieStmtList (value of currentStmtList)
-        /// </summary>
-        /// <param name="node"></param>
-        /// <returns></returns>
+        
         public BoogieStmtList TranslateStatement(Statement node)
         {
             //push the current Statement
@@ -1129,7 +1047,7 @@ namespace ConversionToBoogie
 
             BoogieStmtList annotatedStmtList = new BoogieStmtList();
             // add source file path and line number
-            if (!context.TranslateFlags.NoSourceLineInfoFlag)
+            if (!Flags_HelperClass.NoSourceLineInfoFlag)
             {
                 BoogieAssertCmd annotationCmd = InstrumentSourceFileAndLineInfo(node);
                 annotatedStmtList = BoogieStmtList.MakeSingletonStmtList(annotationCmd);
@@ -1143,7 +1061,7 @@ namespace ConversionToBoogie
 
         private BoogieAssertCmd InstrumentSourceFileAndLineInfo(ASTNode node)
         {
-            var srcFileLineInfo = TranslatorUtilities.GenerateSourceInfoAnnotation(node, context);
+            var srcFileLineInfo = Conversion_Utility_Tool.GenerateSourceInfoAnnotation(node, context);
             currentSourceFile = srcFileLineInfo.Item1;
             currentSourceLine = srcFileLineInfo.Item2;
 
@@ -1182,10 +1100,10 @@ namespace ConversionToBoogie
             preTranslationAction(node);
             foreach (VariableDeclaration varDecl in node.Declarations)
             {
-                string name = TranslatorUtilities.GetCanonicalLocalVariableName(varDecl, context);
-                BoogieType type = TranslatorUtilities.GetBoogieTypeFromSolidityTypeName(varDecl.TypeName);
+                string name = Conversion_Utility_Tool.GetCanonicalLocalVariableName(varDecl, context);
+                BoogieType type = Conversion_Utility_Tool.GetBoogieTypeFromSolidityTypeName(varDecl.TypeName);
                 // Issue a warning for intXX variables in case /useModularArithemtic option is used:
-                if (context.TranslateFlags.UseModularArithmetic && varDecl.TypeDescriptions.IsInt())
+                if (Flags_HelperClass.UseModularArithmetic && varDecl.TypeDescriptions.IsInt())
                 {
                     Console.WriteLine($"Warning: signed integer arithmetic is not handled with /useModularArithmetic option");
                 }
@@ -1220,7 +1138,7 @@ namespace ConversionToBoogie
                 List<BoogieIdentifierExpr> varsToHavoc = new List<BoogieIdentifierExpr>();
                 foreach (VariableDeclaration varDecl in node.Declarations)
                 {
-                    string varIdent = TranslatorUtilities.GetCanonicalLocalVariableName(varDecl, context);
+                    string varIdent = Conversion_Utility_Tool.GetCanonicalLocalVariableName(varDecl, context);
                     varsToHavoc.Add(new BoogieIdentifierExpr(varIdent));
                 }
                 BoogieHavocCmd havocCmd = new BoogieHavocCmd(varsToHavoc);
@@ -1229,35 +1147,10 @@ namespace ConversionToBoogie
             return false;
         }
 
-        //private BoogieExpr HelperModOper(BoogieExpr rhs, Expression lhsNode)
-        //{
-        //    BoogieExpr res = rhs;
-        //    if (!context.TranslateFlags.UseModularArithmetic)
-        //    {
-        //        return res;
-        //    }
-        //    else if (lhsNode is TupleExpression tuple)
-        //    {
-        //        OverSightAssert(false, "Not implemented... tuple in the lhs for overflow detection");
-        //    }
-        //    else if (lhsNode.TypeDescriptions.IsUintWSize(out uint sz))
-        //    {
-                
-        //            Console.WriteLine("HelperModOper: UseModularArithmetic: adding mod on the rhs of asgn; lhs is uint of size {0}", sz);
-        //            OverSightAssert(sz != 0, $"size of uint lhs is zero");
-        //            BigInteger maxUIntValue = (BigInteger)Math.Pow(2, sz);
-        //            Console.WriteLine("HelperModOper: maxUIntValue is {0}", maxUIntValue);
-        //            res = new BoogieFuncCallExpr("modBpl", new List<BoogieExpr>() { rhs, new BoogieLiteralExpr(maxUIntValue) });
-        //            return res;
-             
-        //    }
-
-        //    return res;
-        //}
 
         private BoogieExpr AddModuloOp(Expression srcExpr, BoogieExpr expr, TypeDescription type)
         {
-            if (context.TranslateFlags.UseModularArithmetic)
+            if (Flags_HelperClass.UseModularArithmetic)
             {
                 if (type != null)
                 {
@@ -1286,7 +1179,7 @@ namespace ConversionToBoogie
                 // we only handle the case (e1, e2, .., _, _)  = funcCall(...)
                 lhs.AddRange(tuple.Components.ConvertAll(x => TranslateExpr(x)));
                 isTupleAssignment = true;
-                lhsTypes.AddRange(tuple.Components.ConvertAll(x => MapArrayHelper.InferExprTypeFromTypeString(x.TypeDescriptions.TypeString)));
+                lhsTypes.AddRange(tuple.Components.ConvertAll(x => Flags_HelperClass.getBoogieExpression(x.TypeDescriptions.TypeString)));
             }
             else
             {
@@ -1471,7 +1364,7 @@ namespace ConversionToBoogie
                     {
                         string retVarName = String.IsNullOrEmpty(retVarDecl.Name) ?
                             $"__ret_{retParamCount}_" :
-                            TranslatorUtilities.GetCanonicalLocalVariableName(retVarDecl, context);
+                            Conversion_Utility_Tool.GetCanonicalLocalVariableName(retVarDecl, context);
                         BoogieIdentifierExpr retVar = new BoogieIdentifierExpr(retVarName);
                         BoogieAssignCmd assignCmd = new BoogieAssignCmd(retVar, bTupleExpr.Arguments[retParamCount++]);
                         currentStmtList.AppendStmtList(BoogieStmtList.MakeSingletonStmtList(assignCmd)); //TODO: simultaneous updates
@@ -1483,7 +1376,7 @@ namespace ConversionToBoogie
                     var retVarDecl = currentFunction.ReturnParameters.Parameters[0];
                     string retVarName = String.IsNullOrEmpty(retVarDecl.Name) ?
                         $"__ret_{retParamCount++}_" :
-                        TranslatorUtilities.GetCanonicalLocalVariableName(retVarDecl, context);
+                        Conversion_Utility_Tool.GetCanonicalLocalVariableName(retVarDecl, context);
                     BoogieIdentifierExpr retVar = new BoogieIdentifierExpr(retVarName);
                     BoogieAssignCmd assignCmd = new BoogieAssignCmd(retVar, retExpr);
                     currentStmtList.AppendStmtList(BoogieStmtList.MakeSingletonStmtList(assignCmd)); //TODO: simultaneous updates
@@ -1502,7 +1395,7 @@ namespace ConversionToBoogie
         private void AddAssumeForUints(Expression expr, BoogieExpr boogieExpr, TypeDescription typeDesc)
         {
             // skip based on a flag
-            if (context.TranslateFlags.NoUnsignedAssumesFlag)
+            if (Flags_HelperClass.NoUnsignedAssumesFlag)
                 return;
 
             // Add positive number assume for uints
@@ -1510,7 +1403,7 @@ namespace ConversionToBoogie
             {
                 var ge0 = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.GE, boogieExpr, new BoogieLiteralExpr(BigInteger.Zero));
 
-                if (context.TranslateFlags.UseModularArithmetic)
+                if (Flags_HelperClass.UseModularArithmetic)
                 {
                     var isUint = typeDesc.IsUintWSize(expr, out uint sz);
                     if (isUint)
@@ -1582,7 +1475,7 @@ namespace ConversionToBoogie
 
             currentStmtList.AddStatement(whileCmd);
 
-            if (context.TranslateFlags.InstrumentGas &&
+            if (Flags_HelperClass.InstrumentGas &&
                 context.TranslateFlags.ModelReverts)
             {
                 emitGasCheck(newBody);
@@ -1610,7 +1503,7 @@ namespace ConversionToBoogie
 
             currentStmtList.AppendStmtList(stmtList);
 
-            if (context.TranslateFlags.InstrumentGas &&
+            if (Flags_HelperClass.InstrumentGas &&
                 context.TranslateFlags.ModelReverts)
             {
                 emitGasCheck(newBody);
@@ -1665,7 +1558,7 @@ namespace ConversionToBoogie
         private BoogieExpr TranslateModifiesStmt(BoogieExpr boogieExpr1, BoogieExpr boogieExpr2)
         {
             //has to be M_ref_int[mapp[this]] instead of mapp[this]
-            var mapName = MapArrayHelper.GetMemoryMapName(BoogieType.Ref, BoogieType.Int);
+            var mapName = Flags_HelperClass.generateMemoryMapName(BoogieType.Ref, BoogieType.Int);
             var mappingExpr = new BoogieMapSelect(new BoogieIdentifierExpr(mapName), boogieExpr1);
 
             //boogieExpr2 is a tuple, we need to flatten it into an array
@@ -1735,7 +1628,7 @@ namespace ConversionToBoogie
 
             currentStmtList.AppendStmtList(stmtList);
             
-            if (context.TranslateFlags.InstrumentGas &&
+            if (Flags_HelperClass.InstrumentGas &&
                 context.TranslateFlags.ModelReverts)
             {
                 emitGasCheck(newBody);
@@ -1775,7 +1668,7 @@ namespace ConversionToBoogie
                     BoogieAssignCmd assignCmd = new BoogieAssignCmd(lhs, rhs);
                     currentStmtList.AddStatement(assignCmd);
                     //print the value
-                    if (!context.TranslateFlags.NoDataValuesInfoFlag)
+                    if (!Flags_HelperClass.NoDataValuesInfoFlag)
                     {
                         var callCmd = new BoogieCallCmd("boogie_si_record_sol2Bpl_int", new List<BoogieExpr>() { lhs }, new List<BoogieIdentifierExpr>());
                         callCmd.Attributes = new List<BoogieAttribute>
@@ -1839,7 +1732,7 @@ namespace ConversionToBoogie
         // updated in visitors of different expressions
         private BoogieExpr currentExpr;
 
-        public Dictionary<string, List<BoogieExpr>> ContractInvariants { get => contractInvariants;}
+        public Dictionary<string, List<BoogieExpr>> ContractInvariants { get; } = null;
 
         private BoogieExpr TranslateExpr(Expression expr)
         {
@@ -1914,17 +1807,6 @@ namespace ConversionToBoogie
                 num = BigInteger.Parse(node.Value);
             }
 
-            //if (node.TypeDescriptions.IsAddress())
-            //{
-            //    if (num == BigInteger.Zero)
-            //    {
-            //        return new BoogieIdentifierExpr("null");
-            //    }
-            //    else
-            //    {
-            //        return new BoogieFuncCallExpr("ConstantToRef", new List<BoogieExpr>() { new BoogieLiteralExpr(num) });
-            //    }
-            //} else
             {
                 return new BoogieLiteralExpr(num);
             }
@@ -1944,12 +1826,12 @@ namespace ConversionToBoogie
             else // explicitly defined identifiers
             {
                 OverSightAssert(context.HasASTNodeId(node.ReferencedDeclaration), $"Unknown node: {node}");
-                VariableDeclaration varDecl = context.GetASTNodeById(node.ReferencedDeclaration) as VariableDeclaration;
+                VariableDeclaration varDecl = context.retrieveASTNodethroughID(node.ReferencedDeclaration) as VariableDeclaration;
                 OverSightAssert(varDecl != null);
 
                 if (varDecl.StateVariable)
                 {
-                    string name = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
+                    string name = Conversion_Utility_Tool.GetCanonicalStateVariableName(varDecl, context);
 
                     BoogieIdentifierExpr mapIdentifier = new BoogieIdentifierExpr(name);
                     BoogieMapSelect mapSelect = new BoogieMapSelect(mapIdentifier, new BoogieIdentifierExpr("this"));
@@ -1957,7 +1839,7 @@ namespace ConversionToBoogie
                 }
                 else
                 {
-                    string name = TranslatorUtilities.GetCanonicalLocalVariableName(varDecl, context);
+                    string name = Conversion_Utility_Tool.GetCanonicalLocalVariableName(varDecl, context);
                     BoogieIdentifierExpr identifier = new BoogieIdentifierExpr(name);
                     currentExpr = identifier;
                 }
@@ -2032,11 +1914,11 @@ namespace ConversionToBoogie
                 }
 
                 OverSightAssert(context.HasASTNodeId(identifier.ReferencedDeclaration), $"Unknown node: {identifier}");
-                ASTNode refDecl = context.GetASTNodeById(identifier.ReferencedDeclaration);
+                ASTNode refDecl = context.retrieveASTNodethroughID(identifier.ReferencedDeclaration);
 
                 if (refDecl is EnumDefinition)
                 {
-                    int enumIndex = TranslatorUtilities.GetEnumValueIndex((EnumDefinition)refDecl, node.MemberName);
+                    int enumIndex = Conversion_Utility_Tool.GetEnumValueIndex((EnumDefinition)refDecl, node.MemberName);
                     currentExpr = new BoogieLiteralExpr(enumIndex);
                     return false;
                 }
@@ -2102,7 +1984,7 @@ namespace ConversionToBoogie
                 return false;
             }
 
-            var functionName = TranslatorUtilities.GetFuncNameFromFuncCall(node);
+            var functionName = Conversion_Utility_Tool.GetFuncNameFromFuncCall(node);
 
             if (functionName.Equals("assert"))
             {
@@ -2180,7 +2062,7 @@ namespace ConversionToBoogie
                 // we cannot use temporaries as we are translating a specification
                 currentExpr = TranslateOverSightCodeContractFuncCall(node);
             }
-            else if (context.HasEventNameInContract(currentContract, functionName))
+            else if (context.containsEventName(currentContract, functionName))
             {
                 // generate empty statement list to ignore the event call                
                 List<BoogieAttribute> attributes = new List<BoogieAttribute>()
@@ -2261,7 +2143,7 @@ namespace ConversionToBoogie
             if (OverSightFunc.Equals("_SumMapping_OverSight"))
             {
                 //has to be M_ref_int[mapp[this]] instead of mapp[this]
-                var mapName = MapArrayHelper.GetMemoryMapName(BoogieType.Ref, BoogieType.Int);
+                var mapName = Flags_HelperClass.generateMemoryMapName(BoogieType.Ref, BoogieType.Int);
                 boogieExprs[0] = new BoogieMapSelect(new BoogieIdentifierExpr(mapName), boogieExprs[0]);
             }
             return new BoogieFuncCallExpr(OverSightFunc, boogieExprs);
@@ -2314,7 +2196,7 @@ namespace ConversionToBoogie
 
         private BoogieIdentifierExpr MkNewLocalVariableForFunctionReturn(FunctionCall node)
         {
-            var boogieTypeCall = MapArrayHelper.InferExprTypeFromTypeString(node.TypeDescriptions.TypeString);
+            var boogieTypeCall = Flags_HelperClass.getBoogieExpression(node.TypeDescriptions.TypeString);
 
 
             var newBoogieVar =  MkNewLocalVariableWithType(boogieTypeCall);
@@ -2327,7 +2209,7 @@ namespace ConversionToBoogie
 
         private BoogieIdentifierExpr MkNewLocalVariableWithType(BoogieType boogieTypeCall)
         {
-            var tmpVar = new BoogieLocalVariable(context.MakeFreshTypedIdent(boogieTypeCall));
+            var tmpVar = new BoogieLocalVariable(context.createFreshIdentifier(boogieTypeCall));
             boogieToLocalVarsMap[currentBoogieProc].Add(tmpVar);
 
             var tmpVarExpr = new BoogieIdentifierExpr(tmpVar.Name);
@@ -2488,16 +2370,16 @@ namespace ConversionToBoogie
             OverSightAssert(newExpr.TypeName is UserDefinedTypeName);
             UserDefinedTypeName udt = newExpr.TypeName as UserDefinedTypeName;
 
-            ContractDefinition contract = context.GetASTNodeById(udt.ReferencedDeclaration) as ContractDefinition;
+            ContractDefinition contract = context.retrieveASTNodethroughID(udt.ReferencedDeclaration) as ContractDefinition;
             OverSightAssert(contract != null);
 
             // define a local variable to temporarily hold the object
-            BoogieTypedIdent freshAllocTmpId = context.MakeFreshTypedIdent(BoogieType.Ref);
+            BoogieTypedIdent freshAllocTmpId = context.createFreshIdentifier(BoogieType.Ref);
             BoogieLocalVariable allocTmpVar = new BoogieLocalVariable(freshAllocTmpId);
             boogieToLocalVarsMap[currentBoogieProc].Add(allocTmpVar);
 
             // define a local variable to store the new msg.value
-            BoogieTypedIdent freshMsgValueId = context.MakeFreshTypedIdent(BoogieType.Int);
+            BoogieTypedIdent freshMsgValueId = context.createFreshIdentifier(BoogieType.Int);
             BoogieLocalVariable msgValueVar = new BoogieLocalVariable(freshMsgValueId);
             boogieToLocalVarsMap[currentBoogieProc].Add(msgValueVar);
 
@@ -2516,7 +2398,7 @@ namespace ConversionToBoogie
                     ));
 
             // call constructor of A with this = tmp, msg.sender = this, msg.value = tmpMsgValue, args
-            string callee = TranslatorUtilities.GetCanonicalConstructorName(contract);
+            string callee = Conversion_Utility_Tool.GetCanonicalConstructorName(contract);
             List<BoogieExpr> inputs = new List<BoogieExpr>()
             {
                 tmpVarIdentExpr,
@@ -2547,12 +2429,12 @@ namespace ConversionToBoogie
             var structString = node.TypeDescriptions.TypeString.Split(' ')[1];
 
             // define a local variable to temporarily hold the object
-            BoogieTypedIdent freshAllocTmpId = context.MakeFreshTypedIdent(BoogieType.Ref);
+            BoogieTypedIdent freshAllocTmpId = context.createFreshIdentifier(BoogieType.Ref);
             BoogieLocalVariable allocTmpVar = new BoogieLocalVariable(freshAllocTmpId);
             boogieToLocalVarsMap[currentBoogieProc].Add(allocTmpVar);
 
             // define a local variable to store the new msg.value
-            BoogieTypedIdent freshMsgValueId = context.MakeFreshTypedIdent(BoogieType.Int);
+            BoogieTypedIdent freshMsgValueId = context.createFreshIdentifier(BoogieType.Int);
             BoogieLocalVariable msgValueVar = new BoogieLocalVariable(freshMsgValueId);
             boogieToLocalVarsMap[currentBoogieProc].Add(msgValueVar);
 
@@ -2599,12 +2481,12 @@ namespace ConversionToBoogie
 
         private bool IsDynamicArrayPush(FunctionCall node)
         {
-            string functionName = TranslatorUtilities.GetFuncNameFromFuncCall(node);
+            string functionName = Conversion_Utility_Tool.GetFuncNameFromFuncCall(node);
             if (functionName.Equals("push"))
             {
                 OverSightAssert(node.Expression is MemberAccess);
                 MemberAccess memberAccess = node.Expression as MemberAccess;
-                return MapArrayHelper.IsArrayTypeString(memberAccess.Expression.TypeDescriptions.TypeString);
+                return Flags_HelperClass.IsArrayTypeString(memberAccess.Expression.TypeDescriptions.TypeString);
             }
             return false;
         }
@@ -2621,7 +2503,7 @@ namespace ConversionToBoogie
             BoogieExpr lengthMapSelect = new BoogieMapSelect(new BoogieIdentifierExpr("Length"), receiver);
             // suppose the form is a.push(e)
             // tmp := Length[this][a];
-            BoogieTypedIdent tmpIdent = context.MakeFreshTypedIdent(BoogieType.Int);
+            BoogieTypedIdent tmpIdent = context.createFreshIdentifier(BoogieType.Int);
             boogieToLocalVarsMap[currentBoogieProc].Add(new BoogieLocalVariable(tmpIdent));
             BoogieIdentifierExpr tmp = new BoogieIdentifierExpr(tmpIdent.Name);
             BoogieAssignCmd assignCmd = new BoogieAssignCmd(tmp, lengthMapSelect);
@@ -2629,8 +2511,8 @@ namespace ConversionToBoogie
 
             // M[this][a][tmp] := e;
             BoogieType mapKeyType = BoogieType.Int;
-            BoogieType mapValType = MapArrayHelper.InferExprTypeFromTypeString(node.Arguments[0].TypeDescriptions.TypeString);
-            BoogieExpr mapSelect = MapArrayHelper.GetMemoryMapSelectExpr(mapKeyType, mapValType, receiver, tmp);
+            BoogieType mapValType = Flags_HelperClass.getBoogieExpression(node.Arguments[0].TypeDescriptions.TypeString);
+            BoogieExpr mapSelect = Flags_HelperClass.GetMemoryMapSelectExpr(mapKeyType, mapValType, receiver, tmp);
             BoogieAssignCmd writeCmd = new BoogieAssignCmd(mapSelect, element);
             currentStmtList.AddStatement(writeCmd);
 
@@ -2652,7 +2534,7 @@ namespace ConversionToBoogie
                     {
                         return true;
                     }
-                    var contract = context.GetASTNodeById(identifier.ReferencedDeclaration) as ContractDefinition;
+                    var contract = context.retrieveASTNodethroughID(identifier.ReferencedDeclaration) as ContractDefinition;
                     if (contract == null)
                     {
                         return true;
@@ -2680,7 +2562,7 @@ namespace ConversionToBoogie
             {
                 if (memberAccess.Expression is Identifier identifier)
                 {
-                    var contract = context.GetASTNodeById(identifier.ReferencedDeclaration) as ContractDefinition;
+                    var contract = context.retrieveASTNodethroughID(identifier.ReferencedDeclaration) as ContractDefinition;
                     // a Library is treated as an external function call
                     // we need to do it here as the Lib.Foo, Lib is not an expression but name of a contract
                     if (contract.ContractKind == EnumContractKind.LIBRARY)
@@ -2727,7 +2609,7 @@ namespace ConversionToBoogie
             }
             else
             {
-                var msgIdTmp = context.MakeFreshTypedIdent(BoogieType.Int);
+                var msgIdTmp = context.createFreshIdentifier(BoogieType.Int);
                 BoogieLocalVariable msgValueVar = new BoogieLocalVariable(msgIdTmp);
                 boogieToLocalVarsMap[currentBoogieProc].Add(msgValueVar);
                 msgValueExpr = new BoogieIdentifierExpr(msgIdTmp.Name);
@@ -2778,17 +2660,17 @@ namespace ConversionToBoogie
 
             //struct Foo.Bar[] storage ref should also work
 
-            OverSightAssert(context.UsingMap.ContainsKey(currentContract), $"Expect to see a using A for {typedescr} in this contract {currentContract.Name}");
+            OverSightAssert(context.constructDefinitionsMap.ContainsKey(currentContract), $"Expect to see a using A for {typedescr} in this contract {currentContract.Name}");
 
             HashSet<UserDefinedTypeName> usingRange = new HashSet<UserDefinedTypeName>();
 
             // may need to look into base contracts as well (UsingInBase.sol)
-            foreach (int id in currentContract.LinearizedBaseContracts)
+            foreach (int id in currentContract.LinearBaseContracts)
             {
-                ContractDefinition baseContract = context.GetASTNodeById(id) as ContractDefinition;
+                ContractDefinition baseContract = context.retrieveASTNodethroughID(id) as ContractDefinition;
                 Debug.Assert(baseContract != null);
-                if (!context.UsingMap.ContainsKey(baseContract)) continue;
-                foreach (var kv in context.UsingMap[baseContract])
+                if (!context.constructDefinitionsMap.ContainsKey(baseContract)) continue;
+                foreach (var kv in context.constructDefinitionsMap[baseContract])
                 {
                     if (kv.Value.ToString().Equals(typedescr))
                     {
@@ -2798,9 +2680,9 @@ namespace ConversionToBoogie
             }
             OverSightAssert(usingRange.Count > 0, $"Expecting at least one using A for B for {typedescr}");
 
-            string signature = TranslatorUtilities.InferFunctionSignature(context, node);
-            OverSightAssert(context.HasFuncSignature(signature), $"Cannot find a function with signature: {signature}");
-            var dynamicTypeToFuncMap = context.GetAllFuncDefinitions(signature);
+            string signature = Conversion_Utility_Tool.InferFunctionSignature(context, node);
+            OverSightAssert(context.doesContainFunctionSignature(signature), $"Cannot find a function with signature: {signature}");
+            var dynamicTypeToFuncMap = context.returnFunctionDefintiions(signature);
             OverSightAssert(dynamicTypeToFuncMap.Count > 0);
 
             //intersect the types with a matching function with usingRange
@@ -2825,7 +2707,7 @@ namespace ConversionToBoogie
             };
             arguments.AddRange(node.Arguments.Select(x => TranslateExpr(x)));
 
-            var callee = TranslatorUtilities.GetCanonicalFunctionName(funcDefn.Item2, context);
+            var callee = Conversion_Utility_Tool.GetCanonicalFunctionName(funcDefn.Item2, context);
             var callCmd = new BoogieCallCmd(callee, arguments, outParams);
             currentStmtList.AddStatement(callCmd);
             // throw new NotImplementedException("not done implementing using A for B yet");
@@ -2841,7 +2723,7 @@ namespace ConversionToBoogie
 
         private void TranslateInternalFunctionCall(FunctionCall node, List<BoogieIdentifierExpr> outParams = null)
         {
-            List<BoogieExpr> arguments = TranslatorUtilities.GetDefaultArguments();
+            List<BoogieExpr> arguments = Conversion_Utility_Tool.GetDefaultArguments();
 
             // a Library is treated as an external function call
             // we need to do it here as the Lib.Foo, Lib is not an expression but name of a contract
@@ -2869,7 +2751,7 @@ namespace ConversionToBoogie
             else if (IsStaticDispatching(node))
             {
                 ContractDefinition contract = GetStaticDispatchingContract(node);
-                string functionName = TranslatorUtilities.GetFuncNameFromFuncCall(node);
+                string functionName = Conversion_Utility_Tool.GetFuncNameFromFuncCall(node);
                 string callee = functionName + "_" + contract.Name;
                 BoogieCallCmd callCmd = new BoogieCallCmd(callee, arguments, outParams);
 
@@ -2895,16 +2777,16 @@ namespace ConversionToBoogie
                 BoogieExpr guard = new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.EQ, lhs, rhs);
                 currentStmtList.AddStatement(new BoogieAssumeCmd(guard));
                 OverSightAssert(outParams.Count == 1, $"Do not support getters for tuples yet {node.ToString()} ");
-                string varMapName = TranslatorUtilities.GetCanonicalStateVariableName(varDecl, context);
+                string varMapName = Conversion_Utility_Tool.GetCanonicalStateVariableName(varDecl, context);
                 BoogieMapSelect mapSelect = new BoogieMapSelect(new BoogieIdentifierExpr(varMapName), arguments[0]);
                 currentStmtList.AddStatement(new BoogieAssignCmd(outParams[0], mapSelect));
                 return;
             }
 
             Dictionary<ContractDefinition, FunctionDefinition> dynamicTypeToFuncMap;
-            string signature = TranslatorUtilities.InferFunctionSignature(context, node);
-            OverSightAssert(context.HasFuncSignature(signature), $"Cannot find a function with signature: {signature}");
-            dynamicTypeToFuncMap = context.GetAllFuncDefinitions(signature);
+            string signature = Conversion_Utility_Tool.InferFunctionSignature(context, node);
+            OverSightAssert(context.doesContainFunctionSignature(signature), $"Cannot find a function with signature: {signature}");
+            dynamicTypeToFuncMap = context.returnFunctionDefintiions(signature);
             OverSightAssert(dynamicTypeToFuncMap.Count > 0);
 
             BoogieIfCmd ifCmd = null;
@@ -2914,11 +2796,11 @@ namespace ConversionToBoogie
             foreach (ContractDefinition dynamicType in dynamicTypeToFuncMap.Keys)
             {
                 //ignore the ones those who do not derive from the current contract
-                if (condition && !dynamicType.LinearizedBaseContracts.Contains(currentContract.Id))
+                if (condition && !dynamicType.LinearBaseContracts.Contains(currentContract.Id))
                     continue;
 
                 FunctionDefinition function = dynamicTypeToFuncMap[dynamicType];
-                string callee = TranslatorUtilities.GetCanonicalFunctionName(function, context);
+                string callee = Conversion_Utility_Tool.GetCanonicalFunctionName(function, context);
 
                 BoogieExpr lhs = new BoogieMapSelect(new BoogieIdentifierExpr("DType"), receiver);
                 BoogieExpr rhs = new BoogieIdentifierExpr(dynamicType.Name);
@@ -2958,14 +2840,14 @@ namespace ConversionToBoogie
                 OverSightAssert(memberAccess.ReferencedDeclaration != null);
                 var contractTypeStr = memberAccess.Expression.TypeDescriptions.TypeString;
 
-                if (!context.HasStateVarName(memberAccess.MemberName))
+                if (!context.ContainsStateVar(memberAccess.MemberName))
                 {
                     return false;
                 }
-                contractDefinition = context.GetContractByName(contractTypeStr.Substring("contract ".Length));
+                contractDefinition = context.retrieveContractName(contractTypeStr.Substring("contract ".Length));
                 OverSightAssert(contractDefinition != null, $"Expecting a contract {contractTypeStr} to exist in context");
 
-                var = context.GetStateVarByDynamicType(memberAccess.MemberName, contractDefinition);
+                var = context.retrieveStateVarDynamicType(memberAccess.MemberName, contractDefinition);
                 return true;
             }
 
@@ -2978,7 +2860,7 @@ namespace ConversionToBoogie
             {
                 if (memberAccess.Expression is Identifier ident)
                 {
-                    if (context.GetASTNodeById(ident.ReferencedDeclaration) is ContractDefinition)
+                    if (context.retrieveASTNodethroughID(ident.ReferencedDeclaration) is ContractDefinition)
                     {
                         return true;
                     }
@@ -2995,7 +2877,7 @@ namespace ConversionToBoogie
             Identifier contractId = memberAccess.Expression as Identifier;
             OverSightAssert(contractId != null, $"Unknown contract name: {memberAccess.Expression}");
 
-            ContractDefinition contract = context.GetASTNodeById(contractId.ReferencedDeclaration) as ContractDefinition;
+            ContractDefinition contract = context.retrieveASTNodethroughID(contractId.ReferencedDeclaration) as ContractDefinition;
             OverSightAssert(contract != null);
             return contract;
         }
@@ -3032,7 +2914,7 @@ namespace ConversionToBoogie
             if (node.Expression is Identifier) // cast to user defined types
             {
                 Identifier contractId = node.Expression as Identifier;
-                ContractDefinition contract = context.GetASTNodeById(contractId.ReferencedDeclaration) as ContractDefinition;
+                ContractDefinition contract = context.retrieveASTNodethroughID(contractId.ReferencedDeclaration) as ContractDefinition;
                 OverSightAssert(contract != null);
 
                 // assume (DType[var] == T);
@@ -3065,12 +2947,12 @@ namespace ConversionToBoogie
                 }
 
                 // We do not handle downcasts between unsigned integers, when /useModularArithmetic option is enabled:
-                if (context.TranslateFlags.UseModularArithmetic)
+                if (Flags_HelperClass.UseModularArithmetic)
                 {
                     bool argTypeIsUint = node.Arguments[0].TypeDescriptions.IsUintWSize(node.Arguments[0], out uint argSz);
                     if (argTypeIsUint && elemType.ToString().StartsWith("uint"))
                     {
-                        uint castSz = uint.Parse(Extensions.GetNumberFromEnd(elemType.ToString()));
+                        uint castSz = uint.Parse(Utility.GetNumberFromEnd(elemType.ToString()));
                         if (argSz > castSz)
                         {
                             Console.WriteLine($"Warning: downcasts are not handled with /useModularArithmetic option");
@@ -3124,7 +3006,7 @@ namespace ConversionToBoogie
                         currentExpr = expr;
                     } else // x++, x--
                     {
-                        var boogieType = MapArrayHelper.InferExprTypeFromTypeString(node.SubExpression.TypeDescriptions.TypeString);
+                        var boogieType = Flags_HelperClass.getBoogieExpression(node.SubExpression.TypeDescriptions.TypeString);
                         var tempVar = MkNewLocalVariableWithType(boogieType);
                         currentStmtList.AddStatement(new BoogieAssignCmd(tempVar, expr));
 
@@ -3137,7 +3019,7 @@ namespace ConversionToBoogie
                         currentStmtList.AddStatement(assignCmd);
                     }
                     //print the value
-                    if (!context.TranslateFlags.NoDataValuesInfoFlag)
+                    if (!Flags_HelperClass.NoDataValuesInfoFlag)
                     {
                         var callCmd = new BoogieCallCmd("boogie_si_record_sol2Bpl_int", new List<BoogieExpr>() { expr }, new List<BoogieIdentifierExpr>());
                         callCmd.Attributes = new List<BoogieAttribute>
@@ -3237,7 +3119,7 @@ namespace ConversionToBoogie
             }
             currentExpr = binaryExpr;
 
-            if (context.TranslateFlags.UseModularArithmetic)
+            if (Flags_HelperClass.UseModularArithmetic)
             {
                 //if (node.Operator == "+" || node.Operator == "-" || node.Operator == "*" || node.Operator == "/" || node.Operator == "**")
                 if (node.Operator == "+" || node.Operator == "-" || node.Operator == "*" || node.Operator == "/")
@@ -3285,30 +3167,19 @@ namespace ConversionToBoogie
             Expression baseExpression = node.BaseExpression;
             Expression indexExpression = node.IndexExpression;
 
-            BoogieType indexType = MapArrayHelper.InferExprTypeFromTypeString(indexExpression.TypeDescriptions.TypeString);
+            BoogieType indexType = Flags_HelperClass.getBoogieExpression(indexExpression.TypeDescriptions.TypeString);
             BoogieExpr indexExpr = TranslateExpr(indexExpression);
 
             // the baseExpression has an array or mapping type
-            BoogieType baseKeyType = MapArrayHelper.InferKeyTypeFromTypeString(baseExpression.TypeDescriptions.TypeString);
-            BoogieType baseValType = MapArrayHelper.InferValueTypeFromTypeString(baseExpression.TypeDescriptions.TypeString);
+            BoogieType baseKeyType = Flags_HelperClass.GenerateKeyTypeFromString(baseExpression.TypeDescriptions.TypeString);
+            BoogieType baseValType = Flags_HelperClass.GenerateValueTypeFromString(baseExpression.TypeDescriptions.TypeString);
             BoogieExpr baseExpr = null;
 
             baseExpr = TranslateExpr(baseExpression);
-            //if (node.BaseExpression is Identifier identifier)
-            //{
-            //    baseExpr = TranslateExpr(identifier);
-            //}
-            //else if (node.BaseExpression is IndexAccess indexAccess)
-            //{
-            //    baseExpr = TranslateExpr(indexAccess);
-            //}
-            //else
-            //{
-            //    OverSightAssert(false, $"Unknown base in index access: {node.BaseExpression}");
-            //}
+  
 
             BoogieExpr indexAccessExpr = new BoogieMapSelect(baseExpr, indexExpr);
-            currentExpr = MapArrayHelper.GetMemoryMapSelectExpr(baseKeyType, baseValType, baseExpr, indexExpr);
+            currentExpr = Flags_HelperClass.GetMemoryMapSelectExpr(baseKeyType, baseValType, baseExpr, indexExpr);
             return false;
         }
 
