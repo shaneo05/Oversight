@@ -22,6 +22,8 @@ The batch file can be found in Sources\OverSight
 
 After adding the location of the "bat" file to "PATH" (refer to environment variables) the application can then be invoked from the CMD.
 
+# Running the Program
+
 To Run the application type "runOverSight"
 
 With 0 arguements the application will display usage details
