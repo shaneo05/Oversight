@@ -1,90 +1,59 @@
 ﻿
 namespace OverSightHandler
 {
+    //Uses following System imports
     using System;
     using System.Collections.Generic;
     using System.IO;
 
-    using Microsoft.Extensions.Logging;
-    using SolToBoogie;
-
     /// <summary>
-    /// Top level application to run OverSight to target proofs as well as scalable counterexamples
+    /// Main Entry to OverSight to target proofs in sol contracts and analyse areas of potential future failure for user feedback
     /// </summary>
     class CMD_Main
     {
         public static int Main(string[] args)
         {
-            int expectedLength = 2;
+            OverSightController overSightObjec = new OverSightController();
+
+            //Entry point, if expected length is less than two, then prompt user with guidance such that the correct number of arguements can be entered 
+
+            //Simplistic form of error checking in terms of number of arguments.
+            int expectedLength = 2; 
             if (args.Length < expectedLength)
             {
-                ShowCMDInterface();
+                overSightObjec.ShowCMDInterface();
+                return 1;//represents incorrect execution.
+            }
+            //if length is greatr than expected then prompt interface
+            if (args.Length > expectedLength)
+            {
+                overSightObjec.ShowCMDInterface();
                 return 1;
             }
 
-            string solidityFile, entryPointContractName;
-            bool tryProofFlag;
-            int recursionBound;
-            ILogger logger;
-            HashSet<Tuple<string, string>> ignoredMethods;
-            bool printTransactionSequence = false;
-            TranslatorFlags translatorFlags = new TranslatorFlags();
+            //Name of the sol contract.sol and its contract class name will be taken from args[] after being fed to the parser.
+            string solFile;
+            string classContractName;
+                  
+            //Status value to attempt proof on the sol contract
+            bool attemptProof = true;
 
-            SolToBoogie.ParseUtils.ParseCommandLineArgs(args,
-                out solidityFile,
-                out entryPointContractName,
-                out tryProofFlag,
-                out recursionBound,
-                out logger,
-                out ignoredMethods,
-                out printTransactionSequence, 
-                ref translatorFlags);
+            HashSet<Tuple<string, string>> ignoredMethods = new HashSet<Tuple<string, string>>();
+            ConversionToBoogie.Flags_HelperClass translatorFlags = new ConversionToBoogie.Flags_HelperClass();
 
-            var overSightExecutor =
-                new OverSightExecutor(
-                    Path.Combine(Directory.GetCurrentDirectory(), solidityFile), 
-                    entryPointContractName,
-                    ignoredMethods,
-                    tryProofFlag,
-                    logger,
-                    printTransactionSequence,
-                    translatorFlags);
-            return overSightExecutor.Execute();
-        }
+            //parse the index command line arguements to sol file being index 0 and entryPointContractName as index 1
+            overSightObjec.ParseCommandLineArgs(args, out solFile, out classContractName);
 
+            //Feed these to the OverSight constructor as parameters to begin proof conversion.
 
-        static void ShowCMDInterface()
-        {
-
-            Console.WriteLine("-------------------------------------------------------------------------------------------");
-
-            Console.WriteLine("\nLoading OverSight");
-            Console.WriteLine("Version Alpha");
-            Console.WriteLine("V.0.0.1\n");
-
-            Console.WriteLine("-------------------------------------------------------------------------------------------");
-            Console.WriteLine("\nWelcome to OverSight\n");
-            Console.WriteLine("-------------------------------------------------------------------------------------------");
-            Console.WriteLine("OverSight is a Validation and Verification tool dedicated to Smart Contracts written in Solidity.\n");
-
-            Console.WriteLine("We recommend solidity contracts fed to this program contain relevant/neccessary assertions as inference capability is quite limited due to time constraints.\n");
-
-            Console.WriteLine("To use the application state the following as command arguments, 'OverSight', the Solidity Contract file that you wish to validate/verifiy followed by the contracts class name.\n");
-            Console.WriteLine("For further clarification the format can be shown as follows: \t\t OverSight '[nameOfContract]'.sol '[className].'\n");
-
-            Console.WriteLine("The application will then attempt to find a proof within the sol contract.\n");
-
-            Console.WriteLine("If no proof is found, despite assertions being present, it dictates that the assertion(s) may fail in a future context.\n");
-            Console.WriteLine("This is an indication to the developer of said contract that prior to publification onto the ETH blockchain, the contract should be investigated further.\n");
-
-            Console.WriteLine("For further information on the application refer to 'https://github.com/shaneo05/Oversight'");
-            Console.WriteLine("Report any bugs through a issue invocation on the above github link\n");
-            Console.WriteLine("Thank you for using the software!\n");
-
-
-            Console.WriteLine("-------------------------------------------------------------------------------------------");
-            Console.WriteLine("-------------------------------------------------------------------------------------------");
-
+            overSightObjec.setSolidityFilePath(Path.Combine(Directory.GetCurrentDirectory(), solFile));
+            overSightObjec.setContractName(classContractName);
+            overSightObjec.setIgnoredMethods(ignoredMethods);//currently no benefit.
+            overSightObjec.setProofFlag(attemptProof);//proof is performed by default 
+            overSightObjec.setTranslatorFlag(translatorFlags);//currently no benefit.
+            
+            return overSightObjec.startOverSight(); //Begins execution of program in finding proof.
+            //The above call to execute should result in a 0 for successful completion.
         }
     }
 }

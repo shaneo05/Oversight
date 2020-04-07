@@ -12,7 +12,10 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>OverSight</ToolCommandName>
-    <Description>A prototype validation/verification tool for smart contracts written in Solidity</Description>
+    <Description>A prototype verification tool for smart contracts written in Solidity</Description>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
+    <ApplicationIcon />
+    <StartupObject>OverSightHandler.CMD_Main</StartupObject>
   </PropertyGroup>
 
   <Import Project="..\OverSight.props" />
@@ -25,12 +28,12 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
-    
-    <ProjectReference Include="..\BoogieSyntaxTree\BoogieSyntaxTree.csproj" />
-    <ProjectReference Include="..\SoliditySyntaxTree\SoliditySyntaxTree.csproj" />
     <ProjectReference Include="..\ConversionToBoogie\ConversionToBoogie.csproj" />
+    <ProjectReference Include="..\SoliditySyntaxTree\SyntaxTrees.csproj" />
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+  
 
 </Project>

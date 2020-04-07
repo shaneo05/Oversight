@@ -1,0 +1,9 @@
+Verification Outcome from Boogie utilising Z3 SMT
+
+Executor : C:\OversightRepo\Oversight\Project\bin\Debug\boogie.exe
+
+Arguments :-doModSetAnalysis -inline:spec -noinfer -inlineDepth:4 -proc:BoogieEntry_* BoogieConversion.bpl
+
+Boogie program verifier version 2.4.1.10503, Copyright (c) 2003-2014, Microsoft.
+
+Boogie program verifier finished with 1 verified, 0 errors

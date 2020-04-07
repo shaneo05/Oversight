@@ -12,8 +12,7 @@
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <ItemGroup>
-    <ProjectReference Include="..\BoogieSyntaxTree\BoogieSyntaxTree.csproj" />
-    <ProjectReference Include="..\SoliditySyntaxTree\SoliditySyntaxTree.csproj" />
+    <ProjectReference Include="..\SoliditySyntaxTree\SyntaxTrees.csproj" />
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
