@@ -6,10 +6,11 @@ namespace ConversionToBoogie
     using System.Collections.Generic;
     using Sol_Syntax_Tree;
 
+    //Class to add source info regarding AST to mappings.
     public class accumulator_SOL_srcInfo : Generic_Syntax_Tree_Visitor
     {
-        // require the SourceDirectory field is filled
-        private TranslatorContext classTranslatorContext;
+        // require the AST_Handler instance for adding source info 
+        private AST_Handler classTranslatorContext;
 
         // current source unit the visitor is visiting
         private SourceUnit currentSourceUnit;
@@ -17,24 +18,27 @@ namespace ConversionToBoogie
         //from srcFile name to the int list of "\n" positions
         private readonly Dictionary<string, List<int>> DictLineBreaks = new Dictionary<string, List<int>>();
 
-        public void setContext(TranslatorContext context)
+        // Set Context instance to class translator.
+        public void setContext(AST_Handler context)
         {
             this.classTranslatorContext = context;
         }
 
-        public override bool Visit(SourceUnitList sourceUnits)
+        //Add line breaks to Dictionary
+        public override bool Visit_SRCINFO(SourceUnitList sourceUnits)
         {
-            string srcPath = classTranslatorContext.SourceDirectory;
+            string srcDirectoryPath = classTranslatorContext.SourceDirectory;
             foreach (KeyValuePair<string, SourceUnit> entry in sourceUnits.FilenameToSourceUnitMap)
             {
-                string srcFileName = Path.Combine(srcPath, entry.Key);
-                List<int> LineBreaks = computeLineBreaks(srcFileName);
-                DictLineBreaks.Add(entry.Key, LineBreaks);
+                string srcFileName = Path.Combine(srcDirectoryPath, entry.Key);
+                List<int> Spaces = calculateLineSpacing(srcFileName);
+                DictLineBreaks.Add(entry.Key, Spaces);
             }
             return true;
         }
 
-        public override bool Visit(SourceUnit node)
+        //Prepopulate Sourceunit node to be used in common end visit
+        public override bool Visit_SourceUnit(SourceUnit node)
         {
             currentSourceUnit = node;
             return true;
@@ -42,7 +46,7 @@ namespace ConversionToBoogie
 
         protected override void CommonEndVisit(ASTNode node)
         {
-            if (!(node is SourceUnitList))
+            if ((node is SourceUnitList) == false)
             {
                 string relativePath = currentSourceUnit.AbsolutePath;
                 string absolutePath = Path.Combine(classTranslatorContext.SourceDirectory, relativePath);
@@ -50,19 +54,18 @@ namespace ConversionToBoogie
                 string srcInfo = node.Src;
                 string[] tokens = srcInfo.Split(':');
                 int startPosition = int.Parse(tokens[0]);
-                int lineNumber = MapToLineNumber(relativePath, startPosition);
+                int lineNumber = calculateLineNumber(relativePath, startPosition);
 
                 classTranslatorContext.AddSourceInfoForASTNode(node, absolutePath, lineNumber);
             }
         }
 
-        public int MapToLineNumber(string srcFilePathName, int position)
+        public int calculateLineNumber(string srcFilePathName, int position)
         {
             srcFilePathName = srcFilePathName.Replace("\\", "/"/*, System.StringComparison.CurrentCulture*/);
             List<int> LineBreaks = DictLineBreaks[srcFilePathName];
 
-            //ToDo: Does ConcurrencyExplorer expect the line number to start from 0 or 1?
-            int lineNumber = 0;  //if the first line number is 0, then this statement should be "int lineNumber = -1"; 
+            int lineNumber = 0; 
             foreach (var lineStart in LineBreaks)
             {
                 if (lineStart > position)
@@ -73,7 +76,7 @@ namespace ConversionToBoogie
             return lineNumber;
         }
 
-        private List<int> computeLineBreaks(string filePath)
+        private List<int> calculateLineSpacing(string filePath)
         {
             List<int> LineBreaks = new List<int>();
             int CharCount = 0;

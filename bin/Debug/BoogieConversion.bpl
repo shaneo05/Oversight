@@ -1,21 +1,15 @@
 type Ref;
 type ContractName;
 const unique null: Ref;
-const unique A: ContractName;
-const unique B: ContractName;
-const unique C: ContractName;
+const unique SimpleToken: ContractName;
 function ConstantToRef(x: int) returns (ret: Ref);
 function {:bvbuiltin "mod"} modBpl(x: int, y: int) returns (ret: int);
-function keccak256(x: int) returns (ret: int);
-function abiEncodePacked1(x: int) returns (ret: int);
 function _SumMapping_OverSight(x: [Ref]int) returns (ret: int);
-function abiEncodePacked2(x: int, y: int) returns (ret: int);
-function abiEncodePacked1R(x: Ref) returns (ret: int);
-function abiEncodePacked2R(x: Ref, y: int) returns (ret: int);
 var Balance: [Ref]int;
 var DType: [Ref]ContractName;
 var Alloc: [Ref]bool;
 var balance_ADDR: [Ref]int;
+var M_Ref_int: [Ref][Ref]int;
 var Length: [Ref]int;
 procedure {:inline 1} FreshRefGenerator() returns (newRef: Ref);
 implementation FreshRefGenerator() returns (newRef: Ref)
@@ -38,289 +32,122 @@ assume (forall  __i__0_0:Ref ::  ((oldAlloc[__i__0_0]) ==> (Alloc[__i__0_0])));
 procedure boogie_si_record_sol2Bpl_int(x: int);
 procedure boogie_si_record_sol2Bpl_ref(x: Ref);
 procedure boogie_si_record_sol2Bpl_bool(x: bool);
-
-axiom(forall  __i__0_0:int, __i__0_1:int :: {ConstantToRef(__i__0_0), ConstantToRef(__i__0_1)} (((__i__0_0) == (__i__0_1)) || ((ConstantToRef(__i__0_0)) != (ConstantToRef(__i__0_1)))));
-
-axiom(forall  __i__0_0:int, __i__0_1:int :: {keccak256(__i__0_0), keccak256(__i__0_1)} (((__i__0_0) == (__i__0_1)) || ((keccak256(__i__0_0)) != (keccak256(__i__0_1)))));
-
-axiom(forall  __i__0_0:int, __i__0_1:int :: {abiEncodePacked1(__i__0_0), abiEncodePacked1(__i__0_1)} (((__i__0_0) == (__i__0_1)) || ((abiEncodePacked1(__i__0_0)) != (abiEncodePacked1(__i__0_1)))));
-
-axiom(forall  __i__0_0:[Ref]int ::  ((exists __i__0_1:Ref ::  ((__i__0_0[__i__0_1]) != (0))) || ((_SumMapping_OverSight(__i__0_0)) == (0))));
-
-axiom(forall  __i__0_0:[Ref]int, __i__0_1:Ref, __i__0_2:int ::  ((_SumMapping_OverSight(__i__0_0[__i__0_1 := __i__0_2])) == (((_SumMapping_OverSight(__i__0_0)) - (__i__0_0[__i__0_1])) + (__i__0_2))));
-
-axiom(forall  __i__0_0:int, __i__0_1:int, __i__1_0:int, __i__1_1:int :: {abiEncodePacked2(__i__0_0, __i__1_0), abiEncodePacked2(__i__0_1, __i__1_1)} ((((__i__0_0) == (__i__0_1)) && ((__i__1_0) == (__i__1_1))) || ((abiEncodePacked2(__i__0_0, __i__1_0)) != (abiEncodePacked2(__i__0_1, __i__1_1)))));
-
-axiom(forall  __i__0_0:Ref, __i__0_1:Ref :: {abiEncodePacked1R(__i__0_0), abiEncodePacked1R(__i__0_1)} (((__i__0_0) == (__i__0_1)) || ((abiEncodePacked1R(__i__0_0)) != (abiEncodePacked1R(__i__0_1)))));
-
-axiom(forall  __i__0_0:Ref, __i__0_1:Ref, __i__1_0:int, __i__1_1:int :: {abiEncodePacked2R(__i__0_0, __i__1_0), abiEncodePacked2R(__i__0_1, __i__1_1)} ((((__i__0_0) == (__i__0_1)) && ((__i__1_0) == (__i__1_1))) || ((abiEncodePacked2R(__i__0_0, __i__1_0)) != (abiEncodePacked2R(__i__0_1, __i__1_1)))));
-var x_A: [Ref]int;
-procedure {:inline 1} A_A_NoBaseCtor(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s19: int);
-implementation A_A_NoBaseCtor(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s19: int)
+procedure {:inline 1} SimpleToken_SimpleToken_NoBaseCtor(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int);
+implementation SimpleToken_SimpleToken_NoBaseCtor(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int)
 {
+var __var_1: Ref;
 // start of initialization
 assume ((msgsender_MSG) != (null));
-x_A[this] := 0;
+initialSupply_SimpleToken[this] := 0;
+// Make array/mapping vars distinct for balances
+call __var_1 := FreshRefGenerator();
+balances_SimpleToken[this] := __var_1;
+// Initialize Integer mapping balances
+assume (forall  __i__0_0:Ref ::  ((M_Ref_int[balances_SimpleToken[this]][__i__0_0]) == (0)));
 // end of initialization
-call  {:cexpr "_OverSightFirstArg"} boogie_si_record_sol2Bpl_bool(false);
-call  {:cexpr "this"} boogie_si_record_sol2Bpl_ref(this);
-call  {:cexpr "msg.sender"} boogie_si_record_sol2Bpl_ref(msgsender_MSG);
-call  {:cexpr "msg.value"} boogie_si_record_sol2Bpl_int(msgvalue_MSG);
-call  {:cexpr "a"} boogie_si_record_sol2Bpl_int(a_s19);
-call  {:cexpr "_OverSightLastArg"} boogie_si_record_sol2Bpl_bool(true);
-assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\ConstructorChaining_fail.sol"} {:sourceLine 5} (true);
-assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\ConstructorChaining_fail.sol"} {:sourceLine 5} (true);
-assume ((x_A[this]) >= (0));
-assume ((a_s19) >= (0));
-x_A[this] := a_s19;
-call  {:cexpr "x"} boogie_si_record_sol2Bpl_int(x_A[this]);
-assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\ConstructorChaining_fail.sol"} {:sourceLine 5} (true);
-assume ((x_A[this]) >= (0));
-assume ((a_s19) >= (0));
-assert ((x_A[this]) != (a_s19));
 }
 
-procedure {:constructor} {:public} {:inline 1} A_A(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s19: int);
-implementation A_A(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s19: int)
+procedure {:inline 1} SimpleToken_SimpleToken(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int);
+implementation SimpleToken_SimpleToken(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int)
 {
 call  {:cexpr "_OverSightFirstArg"} boogie_si_record_sol2Bpl_bool(false);
 call  {:cexpr "this"} boogie_si_record_sol2Bpl_ref(this);
 call  {:cexpr "msg.sender"} boogie_si_record_sol2Bpl_ref(msgsender_MSG);
 call  {:cexpr "msg.value"} boogie_si_record_sol2Bpl_int(msgvalue_MSG);
-call  {:cexpr "a"} boogie_si_record_sol2Bpl_int(a_s19);
 call  {:cexpr "_OverSightLastArg"} boogie_si_record_sol2Bpl_bool(true);
-call A_A_NoBaseCtor(this, msgsender_MSG, msgvalue_MSG, a_s19);
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 3} (true);
+call SimpleToken_SimpleToken_NoBaseCtor(this, msgsender_MSG, msgvalue_MSG);
 }
 
-procedure {:inline 1} B_B_NoBaseCtor(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s42: int);
-implementation B_B_NoBaseCtor(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s42: int)
-{
-// start of initialization
-assume ((msgsender_MSG) != (null));
-// end of initialization
-call  {:cexpr "_OverSightFirstArg"} boogie_si_record_sol2Bpl_bool(false);
-call  {:cexpr "this"} boogie_si_record_sol2Bpl_ref(this);
-call  {:cexpr "msg.sender"} boogie_si_record_sol2Bpl_ref(msgsender_MSG);
-call  {:cexpr "msg.value"} boogie_si_record_sol2Bpl_int(msgvalue_MSG);
-call  {:cexpr "a"} boogie_si_record_sol2Bpl_int(a_s42);
-call  {:cexpr "_OverSightLastArg"} boogie_si_record_sol2Bpl_bool(true);
-assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\ConstructorChaining_fail.sol"} {:sourceLine 9} (true);
-assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\ConstructorChaining_fail.sol"} {:sourceLine 9} (true);
-assume ((x_A[this]) >= (0));
-x_A[this] := (x_A[this]) + (1);
-call  {:cexpr "x"} boogie_si_record_sol2Bpl_int(x_A[this]);
-assume ((x_A[this]) >= (0));
-assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\ConstructorChaining_fail.sol"} {:sourceLine 9} (true);
-assume ((x_A[this]) >= (0));
-assume ((a_s42) >= (0));
-assume (((a_s42) + (2)) >= (0));
-assert ((x_A[this]) != ((a_s42) + (2)));
-}
-
-procedure {:constructor} {:public} {:inline 1} B_B(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s42: int);
-implementation B_B(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s42: int)
+var initialSupply_SimpleToken: [Ref]int;
+var balances_SimpleToken: [Ref]Ref;
+procedure {:public} {:inline 1} _SimpleToken(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, _initialSupply_s24: int);
+implementation _SimpleToken(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, _initialSupply_s24: int)
 {
 call  {:cexpr "_OverSightFirstArg"} boogie_si_record_sol2Bpl_bool(false);
 call  {:cexpr "this"} boogie_si_record_sol2Bpl_ref(this);
 call  {:cexpr "msg.sender"} boogie_si_record_sol2Bpl_ref(msgsender_MSG);
 call  {:cexpr "msg.value"} boogie_si_record_sol2Bpl_int(msgvalue_MSG);
-call  {:cexpr "a"} boogie_si_record_sol2Bpl_int(a_s42);
+call  {:cexpr "_initialSupply"} boogie_si_record_sol2Bpl_int(_initialSupply_s24);
 call  {:cexpr "_OverSightLastArg"} boogie_si_record_sol2Bpl_bool(true);
-assume ((a_s42) >= (0));
-call A_A(this, msgsender_MSG, msgvalue_MSG, a_s42);
-call B_B_NoBaseCtor(this, msgsender_MSG, msgvalue_MSG, a_s42);
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 8} (true);
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 9} (true);
+assume ((initialSupply_SimpleToken[this]) >= (0));
+assume ((_initialSupply_s24) >= (0));
+initialSupply_SimpleToken[this] := _initialSupply_s24;
+call  {:cexpr "initialSupply"} boogie_si_record_sol2Bpl_int(initialSupply_SimpleToken[this]);
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 10} (true);
+assume ((M_Ref_int[balances_SimpleToken[this]][msgsender_MSG]) >= (0));
+assume ((_initialSupply_s24) >= (0));
+M_Ref_int[balances_SimpleToken[this]][msgsender_MSG] := _initialSupply_s24;
+call  {:cexpr "balances[msg.sender]"} boogie_si_record_sol2Bpl_int(M_Ref_int[balances_SimpleToken[this]][msgsender_MSG]);
 }
 
-procedure {:inline 1} C_C_NoBaseCtor(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s65: int);
-implementation C_C_NoBaseCtor(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s65: int)
-{
-// start of initialization
-assume ((msgsender_MSG) != (null));
-// end of initialization
-call  {:cexpr "_OverSightFirstArg"} boogie_si_record_sol2Bpl_bool(false);
-call  {:cexpr "this"} boogie_si_record_sol2Bpl_ref(this);
-call  {:cexpr "msg.sender"} boogie_si_record_sol2Bpl_ref(msgsender_MSG);
-call  {:cexpr "msg.value"} boogie_si_record_sol2Bpl_int(msgvalue_MSG);
-call  {:cexpr "a"} boogie_si_record_sol2Bpl_int(a_s65);
-call  {:cexpr "_OverSightLastArg"} boogie_si_record_sol2Bpl_bool(true);
-assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\ConstructorChaining_fail.sol"} {:sourceLine 13} (true);
-assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\ConstructorChaining_fail.sol"} {:sourceLine 13} (true);
-assume ((x_A[this]) >= (0));
-x_A[this] := (x_A[this]) + (1);
-call  {:cexpr "x"} boogie_si_record_sol2Bpl_int(x_A[this]);
-assume ((x_A[this]) >= (0));
-assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\ConstructorChaining_fail.sol"} {:sourceLine 13} (true);
-assume ((x_A[this]) >= (0));
-assume ((a_s65) >= (0));
-assume (((a_s65) + (2)) >= (0));
-assert ((x_A[this]) != ((a_s65) + (2)));
-}
-
-procedure {:constructor} {:public} {:inline 1} C_C(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s65: int);
-implementation C_C(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, a_s65: int)
+procedure {:public} {:inline 1} sendFunds_SimpleToken(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, _recipient_s75: Ref, _amount_s75: int);
+implementation sendFunds_SimpleToken(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, _recipient_s75: Ref, _amount_s75: int)
 {
 call  {:cexpr "_OverSightFirstArg"} boogie_si_record_sol2Bpl_bool(false);
 call  {:cexpr "this"} boogie_si_record_sol2Bpl_ref(this);
 call  {:cexpr "msg.sender"} boogie_si_record_sol2Bpl_ref(msgsender_MSG);
 call  {:cexpr "msg.value"} boogie_si_record_sol2Bpl_int(msgvalue_MSG);
-call  {:cexpr "a"} boogie_si_record_sol2Bpl_int(a_s65);
+call  {:cexpr "_recipient"} boogie_si_record_sol2Bpl_ref(_recipient_s75);
+call  {:cexpr "_amount"} boogie_si_record_sol2Bpl_int(_amount_s75);
 call  {:cexpr "_OverSightLastArg"} boogie_si_record_sol2Bpl_bool(true);
-assume ((a_s65) >= (0));
-call B_B(this, msgsender_MSG, msgvalue_MSG, a_s65);
-call C_C_NoBaseCtor(this, msgsender_MSG, msgvalue_MSG, a_s65);
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 13} (true);
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 14} (true);
+assume ((M_Ref_int[balances_SimpleToken[this]][msgsender_MSG]) >= (0));
+assume ((_amount_s75) >= (0));
+assume ((M_Ref_int[balances_SimpleToken[this]][msgsender_MSG]) >= (_amount_s75));
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 15} (true);
+assume ((_recipient_s75) != (msgsender_MSG));
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 16} (true);
+assume ((M_Ref_int[balances_SimpleToken[this]][_recipient_s75]) >= (0));
+assume ((_amount_s75) >= (0));
+assume (((M_Ref_int[balances_SimpleToken[this]][_recipient_s75]) + (_amount_s75)) >= (0));
+assume ((M_Ref_int[balances_SimpleToken[this]][_recipient_s75]) >= (0));
+assume (((M_Ref_int[balances_SimpleToken[this]][_recipient_s75]) + (_amount_s75)) > (M_Ref_int[balances_SimpleToken[this]][_recipient_s75]));
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 17} (true);
+assume ((M_Ref_int[balances_SimpleToken[this]][msgsender_MSG]) >= (0));
+assume ((_amount_s75) >= (0));
+M_Ref_int[balances_SimpleToken[this]][msgsender_MSG] := (M_Ref_int[balances_SimpleToken[this]][msgsender_MSG]) - (_amount_s75);
+call  {:cexpr "balances[msg.sender]"} boogie_si_record_sol2Bpl_int(M_Ref_int[balances_SimpleToken[this]][msgsender_MSG]);
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 18} (true);
+assume ((M_Ref_int[balances_SimpleToken[this]][_recipient_s75]) >= (0));
+assume ((_amount_s75) >= (0));
+M_Ref_int[balances_SimpleToken[this]][_recipient_s75] := (M_Ref_int[balances_SimpleToken[this]][_recipient_s75]) + (_amount_s75);
+call  {:cexpr "balances[_recipient]"} boogie_si_record_sol2Bpl_int(M_Ref_int[balances_SimpleToken[this]][_recipient_s75]);
 }
 
-procedure BoogieEntry_A();
-implementation BoogieEntry_A()
+procedure {:public} {:inline 1} balanceOf_SimpleToken(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, _owner_s87: Ref) returns (__ret_0_: int);
+implementation balanceOf_SimpleToken(this: Ref, msgsender_MSG: Ref, msgvalue_MSG: int, _owner_s87: Ref) returns (__ret_0_: int)
+{
+call  {:cexpr "_OverSightFirstArg"} boogie_si_record_sol2Bpl_bool(false);
+call  {:cexpr "this"} boogie_si_record_sol2Bpl_ref(this);
+call  {:cexpr "msg.sender"} boogie_si_record_sol2Bpl_ref(msgsender_MSG);
+call  {:cexpr "msg.value"} boogie_si_record_sol2Bpl_int(msgvalue_MSG);
+call  {:cexpr "_owner"} boogie_si_record_sol2Bpl_ref(_owner_s87);
+call  {:cexpr "_OverSightLastArg"} boogie_si_record_sol2Bpl_bool(true);
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 21} (true);
+assert {:first} {:sourceFile "C:\OversightRepo\Oversight\Project\UnitTests\SimpleToken.sol"} {:sourceLine 22} (true);
+assume ((M_Ref_int[balances_SimpleToken[this]][_owner_s87]) >= (0));
+__ret_0_ := M_Ref_int[balances_SimpleToken[this]][_owner_s87];
+return;
+}
+
+procedure BoogieEntry_SimpleToken();
+implementation BoogieEntry_SimpleToken()
 {
 var this: Ref;
 var msgsender_MSG: Ref;
 var msgvalue_MSG: int;
 var choice: int;
-var a_s19: int;
-assume ((((DType[this]) == (A)) || ((DType[this]) == (B))) || ((DType[this]) == (C)));
-call A_A(this, msgsender_MSG, msgvalue_MSG, a_s19);
-while (true)
-{
-havoc msgsender_MSG;
-havoc msgvalue_MSG;
-havoc choice;
-havoc a_s19;
-}
-}
-
-procedure BoogieEntry_B();
-implementation BoogieEntry_B()
-{
-var this: Ref;
-var msgsender_MSG: Ref;
-var msgvalue_MSG: int;
-var choice: int;
-var a_s19: int;
-var a_s42: int;
-assume (((DType[this]) == (B)) || ((DType[this]) == (C)));
-call B_B(this, msgsender_MSG, msgvalue_MSG, a_s42);
-while (true)
-{
-havoc msgsender_MSG;
-havoc msgvalue_MSG;
-havoc choice;
-havoc a_s19;
-havoc a_s42;
-}
-}
-
-procedure BoogieEntry_C();
-implementation BoogieEntry_C()
-{
-var this: Ref;
-var msgsender_MSG: Ref;
-var msgvalue_MSG: int;
-var choice: int;
-var a_s19: int;
-var a_s42: int;
-var a_s65: int;
-assume ((DType[this]) == (C));
-call C_C(this, msgsender_MSG, msgvalue_MSG, a_s65);
-while (true)
-{
-havoc msgsender_MSG;
-havoc msgvalue_MSG;
-havoc choice;
-havoc a_s19;
-havoc a_s42;
-havoc a_s65;
-}
-}
-
-procedure CorralChoice_A(this: Ref);
-implementation CorralChoice_A(this: Ref)
-{
-var msgsender_MSG: Ref;
-var msgvalue_MSG: int;
-var choice: int;
-var a_s19: int;
-havoc msgsender_MSG;
-havoc msgvalue_MSG;
-havoc choice;
-havoc a_s19;
-}
-
-procedure CorralEntry_A();
-implementation CorralEntry_A()
-{
-var this: Ref;
-var msgsender_MSG: Ref;
-var msgvalue_MSG: int;
-var a_s19: int;
-assume ((((DType[this]) == (A)) || ((DType[this]) == (B))) || ((DType[this]) == (C)));
-call A_A(this, msgsender_MSG, msgvalue_MSG, a_s19);
-while (true)
-{
-call CorralChoice_A(this);
-}
-}
-
-procedure CorralChoice_B(this: Ref);
-implementation CorralChoice_B(this: Ref)
-{
-var msgsender_MSG: Ref;
-var msgvalue_MSG: int;
-var choice: int;
-var a_s19: int;
-var a_s42: int;
-havoc msgsender_MSG;
-havoc msgvalue_MSG;
-havoc choice;
-havoc a_s19;
-havoc a_s42;
-}
-
-procedure CorralEntry_B();
-implementation CorralEntry_B()
-{
-var this: Ref;
-var msgsender_MSG: Ref;
-var msgvalue_MSG: int;
-var a_s42: int;
-assume (((DType[this]) == (B)) || ((DType[this]) == (C)));
-call B_B(this, msgsender_MSG, msgvalue_MSG, a_s42);
-while (true)
-{
-call CorralChoice_B(this);
-}
-}
-
-procedure CorralChoice_C(this: Ref);
-implementation CorralChoice_C(this: Ref)
-{
-var msgsender_MSG: Ref;
-var msgvalue_MSG: int;
-var choice: int;
-var a_s19: int;
-var a_s42: int;
-var a_s65: int;
-havoc msgsender_MSG;
-havoc msgvalue_MSG;
-havoc choice;
-havoc a_s19;
-havoc a_s42;
-havoc a_s65;
-}
-
-procedure CorralEntry_C();
-implementation CorralEntry_C()
-{
-var this: Ref;
-var msgsender_MSG: Ref;
-var msgvalue_MSG: int;
-var a_s65: int;
-assume ((DType[this]) == (C));
-call C_C(this, msgsender_MSG, msgvalue_MSG, a_s65);
-while (true)
-{
-call CorralChoice_C(this);
-}
+var _initialSupply_s24: int;
+var _recipient_s75: Ref;
+var _amount_s75: int;
+var _owner_s87: Ref;
+var __ret_0_balanceOf: int;
+assume ((DType[this]) == (SimpleToken));
+call SimpleToken_SimpleToken(this, msgsender_MSG, msgvalue_MSG);
 }
 
 

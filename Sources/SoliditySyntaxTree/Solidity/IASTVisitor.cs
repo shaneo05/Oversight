@@ -2,18 +2,18 @@
 {
     public interface IASTVisitor
     {
-        bool Visit(SourceUnitList node);
-        bool Visit(SourceUnit node);
+        bool Visit_SRCINFO(SourceUnitList node);
+        bool Visit_SourceUnit(SourceUnit node);
         bool Visit(PragmaDirective node);
         bool Visit(UsingForDirective node);
         bool Visit(ImportDirective node);
-        bool ContractDefinition_VisitNode(ContractDefinition node);
+        bool ContractDefinition_ReTraceNode(ContractDefinition node);
         bool Visit(InheritanceSpecifier node);
-        bool FunctionDefinition_VisiNode(FunctionDefinition node);
+        bool FunctionDefinition_TraceNode(FunctionDefinition node);
         bool Visit(ParameterList node);
         bool Visit(ModifierDefinition node);
         bool Visit(ModifierInvocation node);
-        bool EventDefinition_VisitNode(EventDefinition node);
+        bool EventDefinition_TraceNode(EventDefinition node);
         bool Visit(StructDefinition node);
         bool Visit(EnumDefinition node);
         bool Visit(EnumValue node);
@@ -54,7 +54,7 @@
         void EndVisit(PragmaDirective node);
         void EndVisit(UsingForDirective node);
         void EndVisit(ImportDirective node);
-        void ContractDefinition_VisitCompletion(ContractDefinition node);
+        void ContractDefinition_NullifyNode(ContractDefinition node);
         void EndVisit(InheritanceSpecifier node);
         void EndVisit(FunctionDefinition node);
         void EndVisit(ParameterList node);

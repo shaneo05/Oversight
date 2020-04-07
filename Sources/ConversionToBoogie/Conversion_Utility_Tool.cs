@@ -4,7 +4,6 @@ namespace ConversionToBoogie
 {
     using System;
     using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
     using System.Diagnostics;
     using System.Numerics;
     using System.Text;
@@ -12,50 +11,29 @@ namespace ConversionToBoogie
     using Boogie_Syntax_Tree;
     using Sol_Syntax_Tree;
 
-    public static class Extensions
-    {
+    public static class Utility
+    {   
+        /**
+         * Function to check whether parse parameter is of signed integer type 
+         */
         public static bool IsInt(this TypeDescription typeDescription)
         {
             return !typeDescription.IsDynamicArray() && !typeDescription.IsStaticArray() 
                 && typeDescription.TypeString.StartsWith("int", StringComparison.CurrentCulture);
         }
 
-        public static bool IsIntWSize(this TypeDescription typeDescription, out uint sz)
-        {
-            string typeStr = typeDescription.TypeString;
-            if (!typeStr.StartsWith("int", StringComparison.CurrentCulture))
-            {
-                sz = uint.MaxValue;
-                return false;
-            }
-
-            //Console.WriteLine($"IsIntWSize: int type: {typeStr}");
-            try
-            {
-                if (typeStr.Equals("int") || (typeStr.Contains("const")))
-                {
-                    sz = 256;
-                }
-                else
-                {
-                    sz = uint.Parse(GetNumberFromEnd(typeStr));
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"OverSight translation error in IsIntWSize: unknown intXX type: {e.Message}");
-                sz = uint.MaxValue;
-                return false;
-            }
-
-            return true;
-        }
+        /**
+         * Function to check whether parsed parameter is of unsigned integer type
+         */
         public static bool IsUint(this TypeDescription typeDescription)
         {
             return !typeDescription.IsDynamicArray() && !typeDescription.IsStaticArray()
                 && typeDescription.TypeString.StartsWith("uint", StringComparison.CurrentCulture);
         }
 
+        /**
+         * Function to retrieve number from end of a character sequence
+         */
         public static string GetNumberFromEnd(string text)
         {
             int i = text.Length - 1;
@@ -67,8 +45,10 @@ namespace ConversionToBoogie
             return text.Substring(i + 1);
         }
 
-        // Returns uintXX type of an unsigned integer constant, where XX is 8, 16, 24, ..., 256
-        private static int GetConstantSize(BigInteger constant)
+        /**
+         * Function to return constant size as a form of integer 
+         */
+        public static int GetConstantSize(BigInteger constant)
         {
             BigInteger power = 1;
             int size = 0;
@@ -86,7 +66,10 @@ namespace ConversionToBoogie
             else if (size % 8 == 0) return size;
             else return 8 * (size / 8) + 8;
         }
-
+        /**
+         * Conditional functional returning boolean value if integer is uintwithSize
+         * Output corresponds to that of binary 
+         */
         public static bool IsUintWSize(this TypeDescription typeDescription, Expression expr, out uint sz)
         {
             string typeStr = typeDescription.TypeString;
@@ -252,19 +235,14 @@ namespace ConversionToBoogie
             return typeDescription.TypeString.StartsWith("enum ", StringComparison.CurrentCulture);
         }
 
-        public static bool IsElementaryType(this TypeDescription typeDescription)
-        {
-            return typeDescription.IsDynamicArray() || typeDescription.IsStaticArray() ||
-                typeDescription.IsInt() || typeDescription.IsUint() || typeDescription.IsBool() || typeDescription.IsString() || typeDescription.IsBytes();
-        }
-        // TODO: Provide a better way to check for dynamic array type
+        // check for static array
         public static bool IsDynamicArray(this TypeDescription typeDescription)
         {
             var match = Regex.Match(typeDescription.TypeString, @".*\[\]").Success;
             return match; 
         }
 
-        // TODO: Provide a better way to check for array type
+        // check for dynamic array
         public static bool IsStaticArray(this TypeDescription typeDescription)
         {
             var match = Regex.Match(typeDescription.TypeString, @".*\[\d+\]").Success;
@@ -277,7 +255,7 @@ namespace ConversionToBoogie
         }
     }
 
-    public static class TranslatorUtilities
+    public static class Conversion_Utility_Tool
     {
         public static BoogieType GetBoogieTypeFromSolidityTypeName(TypeName type)
         {
@@ -405,18 +383,13 @@ namespace ConversionToBoogie
             }
         }
 
-        public static string GetCanonicalVariableName(VariableDeclaration varDecl, TranslatorContext context)
+        public static string GetCanonicalLocalVariableName(VariableDeclaration varDecl, AST_Handler context)
         {
-            return varDecl.StateVariable ? GetCanonicalStateVariableName(varDecl, context) : GetCanonicalLocalVariableName(varDecl, context);
-        }
-
-        public static string GetCanonicalLocalVariableName(VariableDeclaration varDecl, TranslatorContext context)
-        {
-            if (context.TranslateFlags.RemoveScopeInVarName) return varDecl.Name; // not recommended
+            if (Flags_HelperClass.RemoveScopeInVarName) return varDecl.Name; // not recommended
             return varDecl.Name + "_s" + varDecl.Scope.ToString();
         }
 
-        public static string GetCanonicalStateVariableName(VariableDeclaration varDecl, TranslatorContext context)
+        public static string GetCanonicalStateVariableName(VariableDeclaration varDecl, AST_Handler context)
         {
             Debug.Assert(varDecl.StateVariable, $"{varDecl.Name} is not a state variable");
 
@@ -425,7 +398,7 @@ namespace ConversionToBoogie
             return varDecl.Name + "_" + varToContractMap[varDecl].Name;
         }
 
-        public static string GetCanonicalFunctionName(FunctionDefinition funcDef, TranslatorContext context)
+        public static string GetCanonicalFunctionName(FunctionDefinition funcDef, AST_Handler context)
         {
             ContractDefinition contract = context.GetContractByFunction(funcDef);
             return funcDef.Name + "_" + contract.Name;
@@ -471,36 +444,14 @@ namespace ConversionToBoogie
             return builder.ToString();
         }
 
-        public static string ComputeEventSignature(EventDefinition eventDef)
-        {
-            StringBuilder builder = new StringBuilder();
-            builder.Append(eventDef.Name).Append("(");
-            ParameterList parameterList = eventDef.Parameters;
-            Debug.Assert(parameterList != null && parameterList.Parameters != null);
-            if (parameterList.Parameters.Count > 0)
-            {
-                foreach (VariableDeclaration varDecl in parameterList.Parameters)
-                {
-                    // use TypeDescriptions.TypeString instead of TypeName
-                    // when a nested struct/Enum is declared TypeName may not have the contractprefix (Foo.EnumType), 
-                    // but TypeDescriptions has the entire prefix. This is useful as a function may be declared as (EnumType a)
-                    // and the TypeName does not have the context. 
-                    builder.Append(varDecl.TypeDescriptions.TypeString).Append(", ");
-                }
-                builder.Length -= 2;
-            }
-            builder.Append(")");
-            return builder.ToString();
-        }
-
-        public static string InferFunctionSignature(TranslatorContext context, FunctionCall node)
+        public static string InferFunctionSignature(AST_Handler context, FunctionCall node)
         {
             Debug.Assert(node.Arguments != null);
 
             if (node.Expression is MemberAccess memberAccess)
             {
                 Debug.Assert(memberAccess.ReferencedDeclaration != null);
-                FunctionDefinition function = context.GetASTNodeById(memberAccess.ReferencedDeclaration.Value) as FunctionDefinition;
+                FunctionDefinition function = context.retrieveASTNodethroughID(memberAccess.ReferencedDeclaration.Value) as FunctionDefinition;
                 Debug.Assert(function != null, $"Could not find function {node.ToString()}");
                 StringBuilder builder = new StringBuilder();
                 builder.Append(function.Name).Append("(");
@@ -562,32 +513,6 @@ namespace ConversionToBoogie
             }
         }
 
-        public static string InferExpressionType(Expression expression)
-        {
-            Debug.Assert(expression.TypeDescriptions != null, $"Null type description for {expression}");
-            string typeString = expression.TypeDescriptions.TypeString;
-            if (typeString.Equals("bool"))
-            {
-                return "bool";
-            }
-            else if (typeString.StartsWith("uint"))
-            {
-                return "uint";
-            }
-            else if (typeString.StartsWith("int"))
-            {
-                return "int";
-            }
-            else if (typeString.Equals("address") || typeString.Equals("address payable"))
-            {
-                return "address";
-            }
-            else
-            {
-                throw new SystemException($"Unknown type string {typeString} for expression {expression}");
-            }
-        }
-
         public static string GetFuncNameFromFuncCall(FunctionCall node)
         {
             if (node.Expression is FunctionCall funcCall)
@@ -634,7 +559,7 @@ namespace ConversionToBoogie
             return functionName;
         }
 
-        public static Tuple<string, int> GenerateSourceInfoAnnotation(ASTNode node, TranslatorContext context)
+        public static Tuple<string, int> GenerateSourceInfoAnnotation(ASTNode node, AST_Handler context)
         {
             return (Tuple.Create<string,int>(context.GetAbsoluteSourcePathOfASTNode(node), context.GetLineNumberOfASTNode(node)));
         }
@@ -662,7 +587,7 @@ namespace ConversionToBoogie
             };
         }   
 
-        public static List<BoogieVariable> CollectLocalVars(List<ContractDefinition> contracts, TranslatorContext context)
+        public static List<BoogieVariable> CollectLocalVars(List<ContractDefinition> contracts, AST_Handler context)
         {
             Debug.Assert(contracts.Count > 0, "Internal exception: expecting at least one contract here");
             List<BoogieVariable> localVars = new List<BoogieVariable>()
@@ -681,7 +606,7 @@ namespace ConversionToBoogie
                 if (contract.ContractKind != EnumContractKind.CONTRACT) continue;
 
                 // Consider all visible functions
-                HashSet<FunctionDefinition> funcDefs = context.GetVisibleFunctionsByContract(contract);
+                HashSet<FunctionDefinition> funcDefs = context.RetrieveVisibleFunctions(contract);
                 foreach (FunctionDefinition funcDef in funcDefs)
                 {
                     if (funcDef.Visibility == EnumVisibility.PUBLIC || funcDef.Visibility == EnumVisibility.EXTERNAL)
@@ -692,11 +617,11 @@ namespace ConversionToBoogie
                             string name = $"__arg_{inpParamCount++}_" + funcDef.Name;
                             if (!string.IsNullOrEmpty(param.Name))
                             {
-                                name = TranslatorUtilities.GetCanonicalLocalVariableName(param, context);
+                                name = Conversion_Utility_Tool.GetCanonicalLocalVariableName(param, context);
                             }
                             if (!uniqueVarNames.Contains(name))
                             {
-                                BoogieType type = TranslatorUtilities.GetBoogieTypeFromSolidityTypeName(param.TypeName);
+                                BoogieType type = Conversion_Utility_Tool.GetBoogieTypeFromSolidityTypeName(param.TypeName);
                                 BoogieVariable localVar = new BoogieLocalVariable(new BoogieTypedIdent(name, type));
                                 localVars.Add(localVar);
                                 uniqueVarNames.Add(name);
@@ -709,11 +634,11 @@ namespace ConversionToBoogie
                             string name = $"__ret_{retParamCount++}_" + funcDef.Name;
                             if (!string.IsNullOrEmpty(param.Name))
                             {
-                                name = TranslatorUtilities.GetCanonicalLocalVariableName(param, context);
+                                name = Conversion_Utility_Tool.GetCanonicalLocalVariableName(param, context);
                             }
                             if (!uniqueVarNames.Contains(name))
                             {
-                                BoogieType type = TranslatorUtilities.GetBoogieTypeFromSolidityTypeName(param.TypeName);
+                                BoogieType type = Conversion_Utility_Tool.GetBoogieTypeFromSolidityTypeName(param.TypeName);
                                 BoogieVariable localVar = new BoogieLocalVariable(new BoogieTypedIdent(name, type));
                                 localVars.Add(localVar);
                                 uniqueVarNames.Add(name);
@@ -733,7 +658,7 @@ namespace ConversionToBoogie
         /// <param name="context"></param>
         /// <param name="callBackTarget">If non-null, this will be the msg.sender for calling back into the contracts</param>
         /// <returns></returns>
-        public static BoogieIfCmd GenerateChoiceBlock(List<ContractDefinition> contracts, TranslatorContext context, Tuple<string, string> callBackTarget = null)
+        public static BoogieIfCmd GenerateChoiceBlock(List<ContractDefinition> contracts, AST_Handler context, Tuple<string, string> callBackTarget = null)
         {
             BoogieIfCmd ifCmd = null;
             int j = 0;
@@ -741,12 +666,12 @@ namespace ConversionToBoogie
             {
                 if (contract.ContractKind != EnumContractKind.CONTRACT) continue;
 
-                HashSet<FunctionDefinition> funcDefs = context.GetVisibleFunctionsByContract(contract);
+                HashSet<FunctionDefinition> funcDefs = context.RetrieveVisibleFunctions(contract);
                 List<FunctionDefinition> publicFuncDefs = new List<FunctionDefinition>();
                 foreach (FunctionDefinition funcDef in funcDefs)
                 {
-                    if (funcDef.IsConstructor) continue;
-                    if (funcDef.IsFallback) continue; //let us not call fallback directly in harness
+                    if (funcDef.ofConstructorType) continue;
+                    if (funcDef.ofFallBackType) continue; //let us not call fallback directly in harness
                     if (funcDef.Visibility == EnumVisibility.PUBLIC || funcDef.Visibility == EnumVisibility.EXTERNAL)
                     {
                         publicFuncDefs.Add(funcDef);
@@ -762,7 +687,7 @@ namespace ConversionToBoogie
                     BoogieStmtList thenBody = new BoogieStmtList();
 
                     FunctionDefinition funcDef = publicFuncDefs[i];
-                    string callee = TranslatorUtilities.GetCanonicalFunctionName(funcDef, context);
+                    string callee = Conversion_Utility_Tool.GetCanonicalFunctionName(funcDef, context);
                     List<BoogieExpr> inputs = new List<BoogieExpr>()
                 {
                     // let us just call back into the calling contract
@@ -776,7 +701,7 @@ namespace ConversionToBoogie
                         string name = $"__arg_{inpParamCount++}_" + funcDef.Name;
                         if (!string.IsNullOrEmpty(param.Name))
                         {
-                            name = TranslatorUtilities.GetCanonicalLocalVariableName(param, context);
+                            name = Conversion_Utility_Tool.GetCanonicalLocalVariableName(param, context);
                         }
                         inputs.Add(new BoogieIdentifierExpr(name));
                         if (param.TypeName is ArrayTypeName array)
@@ -796,14 +721,14 @@ namespace ConversionToBoogie
                         string name = $"__ret_{retParamCount++}_" + funcDef.Name;
                         if (!string.IsNullOrEmpty(param.Name))
                         {
-                            name = TranslatorUtilities.GetCanonicalLocalVariableName(param, context);
+                            name = Conversion_Utility_Tool.GetCanonicalLocalVariableName(param, context);
 
                         }
 
                         outputs.Add(new BoogieIdentifierExpr(name));
                     }
 
-                    if (context.TranslateFlags.InstrumentGas)
+                    if (Flags_HelperClass.InstrumentGas)
                     {
                         havocGas(thenBody);
                     }
@@ -828,8 +753,8 @@ namespace ConversionToBoogie
             var gasVar = new BoogieIdentifierExpr("gas");
             list.Add(new BoogieHavocCmd(gasVar));
             list.Add(new BoogieAssumeCmd(new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.AND,
-                new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.GT, gasVar, new BoogieLiteralExpr(TranslatorContext.MIN_GAS_LIMIT)),
-                new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.LE, gasVar, new BoogieLiteralExpr(TranslatorContext.MAX_GAS_LIMIT)))));
+                new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.GT, gasVar, new BoogieLiteralExpr(AST_Handler.MIN_GAS_LIMIT)),
+                new BoogieBinaryOperation(BoogieBinaryOperation.Opcode.LE, gasVar, new BoogieLiteralExpr(AST_Handler.MAX_GAS_LIMIT)))));
         }
 
     }

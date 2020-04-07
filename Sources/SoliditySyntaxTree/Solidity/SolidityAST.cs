@@ -109,7 +109,7 @@ namespace Sol_Syntax_Tree
 
         public override void Accept(IASTVisitor visitor)
         {
-            if (visitor.Visit(this))
+            if (visitor.Visit_SRCINFO(this))
             {
                 foreach (string filename in FilenameToSourceUnitMap.Keys)
                 {
@@ -188,7 +188,7 @@ namespace Sol_Syntax_Tree
 
         public override void Accept(IASTVisitor visitor)
         {
-            if (visitor.Visit(this))
+            if (visitor.Visit_SourceUnit(this))
             {
                 Utils.AcceptList(Nodes, visitor);
             }
@@ -323,7 +323,7 @@ namespace Sol_Syntax_Tree
 
         public bool FullyImplemented { get; set; }
 
-        public List<int> LinearizedBaseContracts { get; set; }
+        public List<int> LinearBaseContracts { get; set; }
 
         public string Name { get; set; }
 
@@ -331,12 +331,12 @@ namespace Sol_Syntax_Tree
 
         public override void Accept(IASTVisitor visitor)
         {
-            if (visitor.ContractDefinition_VisitNode(this))
+            if (visitor.ContractDefinition_ReTraceNode(this))
             {
                 Utils.AcceptList(BaseContracts, visitor);
                 Utils.AcceptList(Nodes, visitor);
             }
-            visitor.ContractDefinition_VisitCompletion(this);
+            visitor.ContractDefinition_NullifyNode(this);
         }
 
         public override T Accept<T>(IASTGenericVisitor<T> visitor)
@@ -425,9 +425,9 @@ namespace Sol_Syntax_Tree
 
         public bool Implemented { get; set; }
 
-        public bool IsConstructor { get; set; }
+        public bool ofConstructorType { get; set; }
 
-        public bool IsFallback{ get; set; }
+        public bool ofFallBackType{ get; set; }
 
         public bool IsDeclaredConst { get; set; }
 
@@ -447,7 +447,7 @@ namespace Sol_Syntax_Tree
 
         public override void Accept(IASTVisitor visitor)
         {
-            if (visitor.FunctionDefinition_VisiNode(this))
+            if (visitor.FunctionDefinition_TraceNode(this))
             {
                 Parameters.Accept(visitor);
                 if (ReturnParameters != null)
@@ -471,7 +471,7 @@ namespace Sol_Syntax_Tree
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
-            if (IsConstructor && string.IsNullOrEmpty(Name))
+            if (ofConstructorType && string.IsNullOrEmpty(Name))
             {
                 //will be dead code in solc 0.5.x
                 builder.Append("constructor ");
@@ -622,7 +622,7 @@ namespace Sol_Syntax_Tree
 
         public override void Accept(IASTVisitor visitor)
         {
-            if (visitor.EventDefinition_VisitNode(this))
+            if (visitor.EventDefinition_TraceNode(this))
             {
                 Parameters.Accept(visitor);
             }

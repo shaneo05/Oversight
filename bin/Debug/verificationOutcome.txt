@@ -1,18 +1,9 @@
-Boogie program verifier version 2.4.1.10503, Copyright (c) 2003-2014, Microsoft.
-BoogieConversion.bpl(80,1): Error BP5001: This assertion might not hold.
-Execution trace:
-    BoogieConversion.bpl(181,1): anon0
-    BoogieConversion.bpl(62,1): inline$A_A_NoBaseCtor$0$anon0
-BoogieConversion.bpl(80,1): Error BP5001: This assertion might not hold.
-Execution trace:
-    BoogieConversion.bpl(201,1): anon0
-    BoogieConversion.bpl(123,1): inline$B_B$0$anon0
-    BoogieConversion.bpl(62,1): inline$A_A_NoBaseCtor$0$anon0
-BoogieConversion.bpl(80,1): Error BP5001: This assertion might not hold.
-Execution trace:
-    BoogieConversion.bpl(223,1): anon0
-    BoogieConversion.bpl(162,1): inline$C_C$0$anon0
-    BoogieConversion.bpl(123,1): inline$B_B$0$anon0
-    BoogieConversion.bpl(62,1): inline$A_A_NoBaseCtor$0$anon0
+Verification Outcome from Boogie utilising Z3 SMT
 
-Boogie program verifier finished with 0 verified, 3 errors
+Executor : C:\OversightRepo\Oversight\Project\bin\Debug\boogie.exe
+
+Arguments :-doModSetAnalysis -inline:spec -noinfer -inlineDepth:4 -proc:BoogieEntry_* BoogieConversion.bpl
+
+Boogie program verifier version 2.4.1.10503, Copyright (c) 2003-2014, Microsoft.
+
+Boogie program verifier finished with 1 verified, 0 errors

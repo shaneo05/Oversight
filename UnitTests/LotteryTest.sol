@@ -1,43 +1,51 @@
 pragma solidity >=0.4.24 <0.6.0;
 
-contract Lottery10Users {
-    address[10] participants;
-    uint8 participantsCount = 0;
-    uint randNonce = 0;
+//A simple lottery contract designed for a maximum of 30 users.
 
-    function join() public payable {
-        require(msg.value == 0.1 ether, "Must send 0.1 ether");
-        require(participantsCount < 10, "User limit reached");
-        require(joinedAlready(msg.sender) == false, "User already joined");
-        participants[participantsCount] = msg.sender;
-        participantsCount++;
-        if (participantsCount == 10) {
-            selectWinner();
-        }
-    }
-    
-    function joinedAlready(address _participant) private view returns(bool) {
+contract LotteryUsers_30 {
+    address[30] totalNumberOfParticipants;
+    uint totalNumberOfParticipantsCount = 0;
+    uint randNumber = 0;
+ 
+
+    //Function to check whether a user is already in the game.
+    function alreadyInGame(address tempParticipant) private view returns(bool) {
         bool containsParticipant = false;
-        for(uint i = 0; i < 10; i++) {
-            if (participants[i] == _participant) {
+        for(int index = 0; index < 30; index++) {
+            if (totalNumberOfParticipants[index] == tempParticipant) {
                 containsParticipant = true;
             }
         }
         return containsParticipant;
     }
+
+    //Function to participate in the game.
+    function joinGame() public payable {
+        require(msg.value == 0.05 ether, "You must deposit 0.05 ether to join this lottery");
+        require(totalNumberOfParticipantsCount < 30, "Capacity for this game has been reached");
+        require(alreadyInGame(msg.sender) == false, "User already joined");
+        
+        totalNumberOfParticipants[totalNumberOfParticipantsCount] = msg.sender;
+        totalNumberOfParticipantsCount++;
+        if (totalNumberOfParticipantsCount == 30) {
+            generateWinner();
+        }
+    }  
     
-    function selectWinner() private returns(address) {
-        require(participantsCount == 10, "Waiting for more users");
-        address payable winner = address(uint160(participants[randomNumber()]));
+
+    //Function to determine a winner.
+    function generateWinner() private returns(address) {
+        require(totalNumberOfParticipantsCount == 30, "Free slots still available");
+        address payable winner = address(uint160(totalNumberOfParticipants[randomNumber()]));
         winner.transfer(address(this).balance);
-        delete participants;
-        participantsCount = 0;
+        delete totalNumberOfParticipants;
+        totalNumberOfParticipantsCount = 0;
         return winner;
     }
     
     function randomNumber() private returns(uint) {
-        uint rand = uint(keccak256(abi.encodePacked(now, msg.sender, randNonce))) % 10;
-        randNonce++;
+        uint rand = uint(keccak256(abi.encodePacked(now, msg.sender, randNumber))) % 30;
+        randNumber;
         return rand;
     }
         

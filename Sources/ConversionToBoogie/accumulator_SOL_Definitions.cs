@@ -6,31 +6,35 @@ namespace ConversionToBoogie
     using System.Collections.Generic;
 
     /**
-     * Collect all using definitions and put them in the translator context.
+     * Collect all using definitions and put them in the AST_Handler context.
      */
     public class DefinitionsAccumulator : Generic_Syntax_Tree_Visitor
     {
-        private TranslatorContext classTranslatorContext;
+        private AST_Handler classTranslatorContext;
         private ContractDefinition currentContractDefinition;
-        public void setContext(TranslatorContext context)
+        /**
+         * Set empty context to given context
+         */
+        public void setContext(AST_Handler context)
         {
             this.classTranslatorContext = context;
         }
 
         /**
-         * Represents visit t current node
+         * Represents visit t current node, upon invocation generate contract definitions map for the AST
          */
-        public override bool ContractDefinition_VisitNode(ContractDefinition contractDefinitionNode)
+        public override bool ContractDefinition_ReTraceNode(ContractDefinition contractDefinitionNode)
         {
             currentContractDefinition = contractDefinitionNode;
-            classTranslatorContext.UsingMap[currentContractDefinition] = new Dictionary<UserDefinedTypeName, TypeName>();
+            classTranslatorContext.constructDefinitionsMap[currentContractDefinition] = new Dictionary<UserDefinedTypeName, TypeName>();
             return true;
         }
         /**
          * Represents end of current node visiting
          */
-        public override void ContractDefinition_VisitCompletion(ContractDefinition node)
+        public override void ContractDefinition_NullifyNode(ContractDefinition node)
         {
+            //assign contract definition to null
             currentContractDefinition = null;
         }
 
